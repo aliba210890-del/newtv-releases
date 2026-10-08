@@ -1,0 +1,41 @@
+# Публикация установочного файла New TV для сайта и Downloader (код 5451207).
+# Когда в папке apk/ меняется NewTV.apk — он выкладывается как релиз «latest»:
+#   https://github.com/aliba210890-del/newtv-releases/releases/download/latest/NewTV.apk
+# Старые плееры New TV проверяют version.txt и сами предлагают обновиться.
+name: Publish latest
+
+on:
+  push:
+    branches: [main]
+    paths: ["apk/**"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      R: ${{ github.repository }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Резервная копия старого плеера (один раз)
+        run: |
+          if ! gh release view backup-old-1.0.36 -R "$R" >/dev/null 2>&1; then
+            mkdir -p old
+            gh release download latest -R "$R" -D old || true
+            if [ -f old/NewTV.apk ] && [ "$(cat old/version.txt 2>/dev/null)" = "36" ]; then
+              gh release create backup-old-1.0.36 old/NewTV.apk old/version.txt -R "$R" \
+                --title "Старый плеер 1.0.36 (резервная копия)" --notes "Резервная копия старого плеера New TV" --latest=false
+            fi
+          fi
+
+      - name: Опубликовать как latest
+        run: |
+          V=$(cat apk/version.txt)
+          gh release delete latest -y --cleanup-tag -R "$R" || true
+          gh release create latest apk/NewTV.apk apk/version.txt -R "$R" \
+            --title "New TV 2.0.$((V-1000))" --notes "Установочный файл New TV для Android TV, приставок и Fire TV" --latest
