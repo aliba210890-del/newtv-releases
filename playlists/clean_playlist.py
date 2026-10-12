@@ -1,13 +1,14 @@
-"""Чистит плейлист фильмов от рекламных заставок автора.
+"""Чистит плейлист Dimonovich (фильмы, ТВ) от рекламных заставок автора.
 
-Использование: python clean_films.py <вход.m3u> <выход.m3u>
+Использование: python clean_playlist.py <вход.m3u> <выход.m3u>
 Убирает записи из группы «🔺 INFO 🔺», записи с «🔺 INFO 🔺» в названии
-и ссылки на серверы автора (заставки).
+и ссылки на заставки автора. Обычные каналы с его сервера остаются.
+Строка #EXTM3U (с адресом программы передач) сохраняется.
 """
 import re
 import sys
 
-AD_HOSTS = ("194.26.229.213", "github.com/Dimonovich")
+AD_URLS = ("194.26.229.213/zastavka/", "194.26.229.213/intro/", "github.com/Dimonovich/TV/releases/")
 AD_MARK = "🔺 INFO 🔺"
 
 
@@ -18,14 +19,15 @@ def is_ad(extinf: str, url: str) -> bool:
     name = extinf.rsplit(",", 1)[-1]
     if AD_MARK in name:
         return True
-    return any(h in url for h in AD_HOSTS)
+    return any(u in url for u in AD_URLS)
 
 
 def main(src: str, dst: str) -> None:
     with open(src, encoding="utf-8-sig") as f:
         lines = [l.rstrip("\r\n") for l in f]
 
-    out = ["#EXTM3U"]
+    header = next((l for l in lines if l.startswith("#EXTM3U")), "#EXTM3U")
+    out = [header]
     kept = removed = 0
     i = 0
     while i < len(lines):
