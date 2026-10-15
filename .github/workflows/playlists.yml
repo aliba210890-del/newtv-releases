@@ -1,8 +1,7 @@
 # Обновляет плейлисты в playlists/: берёт свежие файлы у Dimonovich
 # и убирает рекламные заставки автора, фильмы раскладывает по жанрам. Запускается каждые 3 часа.
-# Ссылки для плеера:
-#   Фильмы: https://raw.githubusercontent.com/aliba210890-del/newtv-releases/main/playlists/films.m3u
-#   ТВ:     https://raw.githubusercontent.com/aliba210890-del/newtv-releases/main/playlists/tv.m3u
+# Открытых плейлистов здесь нет: в репозиторий кладутся только зашифрованные playlists/films.enc и tv.enc.
+# Расшифровывает и отдаёт их сервер New TV по секретной ссылке (см. админку → «Плейлисты New TV»).
 name: Playlists
 
 on:
@@ -26,21 +25,21 @@ jobs:
           curl -fsSL --retry 3 -o /tmp/tv.m3u "$SRC/TV"
           python3 playlists/clean_playlist.py /tmp/films.m3u /tmp/films_clean.m3u
           # разложить фильмы по жанрам, мультфильмы по годам (жанры ищутся в Wikidata, найденное хранится в film_genres.json)
-          python3 playlists/categorize.py /tmp/films_clean.m3u playlists/films.m3u playlists/film_genres.json
-          python3 playlists/clean_playlist.py /tmp/tv.m3u playlists/tv.m3u
+          mkdir -p /tmp/out
+          python3 playlists/categorize.py /tmp/films_clean.m3u /tmp/out/films.m3u playlists/film_genres.json
+          python3 playlists/clean_playlist.py /tmp/tv.m3u /tmp/out/tv.m3u
 
-      # Зашифрованные копии для сервера New TV (открытые .m3u будут убраны, когда сервер обновлён)
+      # Шифруем для сервера New TV (открытые .m3u в репозиторий не попадают)
       - name: Зашифровать для сервера
         run: |
           pip install --quiet cryptography
           for n in films tv; do
-            python3 playlists/encrypt.py playlists/$n.m3u playlists/$n.enc || echo "::warning::$n: сервер пока не отдаёт ключ — пропускаю"
+            python3 playlists/encrypt.py /tmp/out/$n.m3u playlists/$n.enc || echo "::warning::$n: сервер не отдал ключ — оставляю прежний файл"
           done
 
       - name: Сохранить, если изменились
         run: |
           git config user.name "newtv-bot"
           git config user.email "newtv-bot@users.noreply.github.com"
-          git add playlists/films.m3u playlists/tv.m3u playlists/film_genres.json
-          git add playlists/*.enc 2>/dev/null || true
+          git add playlists/film_genres.json playlists/*.enc
           git diff --cached --quiet || (git commit -m "Обновить плейлисты" && git pull --rebase && git push)
