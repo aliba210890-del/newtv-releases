@@ -328,8 +328,10 @@ def main(src, dst, cache_path):
         if k not in best or it["group"] == UHD_GROUP:
             best[k] = it
     for k, it in best.items():
-        cats = film_genres(cache.get(k) or {}) or ["Другие фильмы"]
-        for c in cats:
+        cats = film_genres(cache.get(k) or {})
+        if not cats and it["group"] in (NEW_GROUP, UHD_GROUP):
+            continue  # жанр не нашёлся (обычно совсем новые фильмы) — фильм и так есть в «Новинках» или «4K»
+        for c in cats or ["Другие фильмы"]:
             put(c, it["block"])
 
     for it in items:
