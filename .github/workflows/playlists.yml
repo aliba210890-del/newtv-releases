@@ -29,9 +29,18 @@ jobs:
           python3 playlists/categorize.py /tmp/films_clean.m3u playlists/films.m3u playlists/film_genres.json
           python3 playlists/clean_playlist.py /tmp/tv.m3u playlists/tv.m3u
 
+      # Зашифрованные копии для сервера New TV (открытые .m3u будут убраны, когда сервер обновлён)
+      - name: Зашифровать для сервера
+        run: |
+          pip install --quiet cryptography
+          for n in films tv; do
+            python3 playlists/encrypt.py playlists/$n.m3u playlists/$n.enc || echo "::warning::$n: сервер пока не отдаёт ключ — пропускаю"
+          done
+
       - name: Сохранить, если изменились
         run: |
           git config user.name "newtv-bot"
           git config user.email "newtv-bot@users.noreply.github.com"
           git add playlists/films.m3u playlists/tv.m3u playlists/film_genres.json
+          git add playlists/*.enc 2>/dev/null || true
           git diff --cached --quiet || (git commit -m "Обновить плейлисты" && git pull --rebase && git push)
