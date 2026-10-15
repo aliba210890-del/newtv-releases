@@ -274,8 +274,32 @@ def cartoon_group(name, info):
     return CARTOON_OTHER
 
 
-def main(src, dst, cache_path):
+TMDB_IMG = "https://image.tmdb.org/t/p/"
+
+
+def enrich(block, meta):
+    """Подставить постер, описание и рейтинг из TMDB в строку #EXTINF."""
+    if not meta or meta.get("miss"):
+        return block
+    first, name = block[0].rsplit(",", 1)
+    attrs = ""
+    if meta.get("poster"):
+        first = re.sub(r'\s*tvg-logo="[^"]*"', "", first)
+        attrs += ' tvg-logo="' + TMDB_IMG + "w342" + meta["poster"] + '" poster="' + TMDB_IMG + "w780" + meta["poster"] + '"'
+    if meta.get("rating") and meta.get("votes", 0) >= 5:
+        attrs += ' rating="' + str(meta["rating"]) + '"'
+    plot = re.sub(r"\s+", " ", meta.get("plot") or "").replace('"', "\u201c").strip()
+    if plot:
+        attrs += ' description="' + plot + '"'
+    return [first + attrs + "," + name] + block[1:]
+
+
+def main(src, dst, cache_path, tmdb_path=None):
     header, items = parse(src)
+    try:
+        tmdb = json.load(open(tmdb_path, encoding="utf-8")) if tmdb_path else {}
+    except (OSError, ValueError):
+        tmdb = {}
     items = [it for it in items if it["group"] not in REMOVE_GROUPS]
     try:
         with open(cache_path, encoding="utf-8") as f:
@@ -300,7 +324,17 @@ def main(src, dst, cache_path):
             json.dump(cache, f, ensure_ascii=False, indent=0, sort_keys=True)
 
     films = [it for it in items if it["group"] in FILM_GROUPS]
-    known = sum(1 for it in films if (cache.get(key_of(*split_title(it["name"]))) or {}).get("g"))
+    def cats_of(k):
+        t = tmdb.get(k) or {}
+        if t.get("genres"):  # TMDB точнее и знает новинки; Wikidata — запасной вариант
+            g = [x for x in t["genres"] if x != "Драмы"] or t["genres"]
+            return list(dict.fromkeys(g))[:MAX_GENRES]
+        return film_genres(cache.get(k) or {})
+
+    for it in films:  # постеры, описания, рейтинг
+        it["block"] = enrich(it["block"], tmdb.get(key_of(*split_title(it["name"]))))
+
+    known = sum(1 for it in films if cats_of(key_of(*split_title(it["name"]))))
     print(f"фильмов: {len(films)}, с жанром: {known}")
     if films and known < len(films) * 0.3:
         print("слишком мало жанров — оставляю прежние категории")
@@ -328,7 +362,7 @@ def main(src, dst, cache_path):
         if k not in best or it["group"] == UHD_GROUP:
             best[k] = it
     for k, it in best.items():
-        cats = film_genres(cache.get(k) or {})
+        cats = cats_of(k)
         if not cats and it["group"] in (NEW_GROUP, UHD_GROUP):
             continue  # жанр не нашёлся (обычно совсем новые фильмы) — фильм и так есть в «Новинках» или «4K»
         for c in cats or ["Другие фильмы"]:
@@ -353,4 +387,4 @@ def main(src, dst, cache_path):
 
 
 if __name__ == "__main__":
-    main(sys.argv[1], sys.argv[2], sys.argv[3])
+    main(*sys.argv[1:5])
