@@ -23,6 +23,8 @@ FILM_GROUPS = ("Фильмы", "Films_4k", "Новинки кино")
 NEW_GROUP = "Новинки кино"
 UHD_GROUP = "Films_4k"
 CARTOON_GROUP = "Наши Мультфильмы"
+# категории, которые совсем убираем из кинозала (решение Алибека, окт. 2026)
+REMOVE_GROUPS = {"Наши Мультфильмы", "ТОМ И ДЖЕРРИ"}
 
 # жанр Wikidata (английское название) → категория. Порядок = приоритет, если жанров несколько.
 GENRES = [
@@ -274,6 +276,7 @@ def cartoon_group(name, info):
 
 def main(src, dst, cache_path):
     header, items = parse(src)
+    items = [it for it in items if it["group"] not in REMOVE_GROUPS]
     try:
         with open(cache_path, encoding="utf-8") as f:
             cache = json.load(f)
@@ -301,10 +304,11 @@ def main(src, dst, cache_path):
     print(f"фильмов: {len(films)}, с жанром: {known}")
     if films and known < len(films) * 0.3:
         print("слишком мало жанров — оставляю прежние категории")
-        with open(src, encoding="utf-8-sig") as f:
-            txt = f.read()
+        out = [header]
+        for it in items:
+            out.extend(it["block"])
         with open(dst, "w", encoding="utf-8") as f:
-            f.write(txt)
+            f.write("\n".join(out) + "\n")
         return
 
     groups = {}  # категория → список блоков
