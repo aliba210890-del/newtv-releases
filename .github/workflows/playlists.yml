@@ -1,5 +1,5 @@
 # Обновляет плейлисты в playlists/: берёт свежие файлы у Dimonovich
-# и убирает рекламные заставки автора. Запускается каждые 3 часа.
+# и убирает рекламные заставки автора, фильмы раскладывает по жанрам. Запускается каждые 3 часа.
 # Ссылки для плеера:
 #   Фильмы: https://raw.githubusercontent.com/aliba210890-del/newtv-releases/main/playlists/films.m3u
 #   ТВ:     https://raw.githubusercontent.com/aliba210890-del/newtv-releases/main/playlists/tv.m3u
@@ -24,12 +24,14 @@ jobs:
           SRC="https://raw.githubusercontent.com/Dimonovich/TV/refs/heads/Dimonovich/FREE"
           curl -fsSL --retry 3 -o /tmp/films.m3u "$SRC/FILMS.m3u"
           curl -fsSL --retry 3 -o /tmp/tv.m3u "$SRC/TV"
-          python3 playlists/clean_playlist.py /tmp/films.m3u playlists/films.m3u
+          python3 playlists/clean_playlist.py /tmp/films.m3u /tmp/films_clean.m3u
+          # разложить фильмы по жанрам, мультфильмы по годам (жанры ищутся в Wikidata, найденное хранится в film_genres.json)
+          python3 playlists/categorize.py /tmp/films_clean.m3u playlists/films.m3u playlists/film_genres.json
           python3 playlists/clean_playlist.py /tmp/tv.m3u playlists/tv.m3u
 
       - name: Сохранить, если изменились
         run: |
           git config user.name "newtv-bot"
           git config user.email "newtv-bot@users.noreply.github.com"
-          git add playlists/films.m3u playlists/tv.m3u
+          git add playlists/films.m3u playlists/tv.m3u playlists/film_genres.json
           git diff --cached --quiet || (git commit -m "Обновить плейлисты" && git pull --rebase && git push)
