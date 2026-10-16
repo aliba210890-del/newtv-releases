@@ -385,7 +385,13 @@ def main(src, dst, cache_path, tmdb_path=None):
             title, year = split_title(it["name"])
             put(cartoon_group(it["name"], cache.get(key_of(title, year))), it["block"])
         elif it["group"] not in FILM_GROUPS:
-            put(it["group"], it["block"])  # Том и Джерри, документальные циклы — как были
+            # документальные циклы («Как это сделано», «Разрушители легенд»…) — одной категорией «Документальные»,
+            # в приложении каждый цикл — карточкой (x-series), выпуски внутри
+            show = re.sub(r"\s*\(\d{4}\)\s*$", "", it["group"]).replace('"', "'")
+            b = list(it["block"])
+            if 'x-series="' not in b[0]:
+                b[0] = b[0].replace("#EXTINF:-1", '#EXTINF:-1 x-series="' + show + '"', 1)
+            put("Документальные", b)
 
     order = [NEW_GROUP, "Фильмы в 4K"] + GENRE_ORDER + [g for _, _, g in DECADES] + [CARTOON_SERIES, CARTOON_OTHER]
     rest = [g for g in groups if g not in order]
