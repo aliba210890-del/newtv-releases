@@ -43,6 +43,46 @@
    "group": "Мультфильмы",
    "min_minutes": 4,
    "series_groups": 6
+  },
+  {
+   "name": "Paramount Vault",
+   "handle": "@ParamountVault",
+   "search": "Paramount Vault",
+   "group": "Зарубежное кино (English)",
+   "min_minutes": 60,
+   "max": 1000
+  },
+  {
+   "name": "FilmRise Movies",
+   "handle": "@FilmRiseMovies",
+   "search": "FilmRise Movies",
+   "group": "Зарубежное кино (English)",
+   "min_minutes": 60,
+   "max": 1000
+  },
+  {
+   "name": "Popcornflix",
+   "handle": "@Popcornflix",
+   "search": "Popcornflix",
+   "group": "Зарубежное кино (English)",
+   "min_minutes": 60,
+   "max": 1000
+  },
+  {
+   "name": "Netzkino",
+   "handle": "@netzkino",
+   "search": "Netzkino",
+   "group": "Кино на немецком (Deutsch)",
+   "min_minutes": 60,
+   "max": 1000
+  },
+  {
+   "name": "Moviedome",
+   "handle": "@moviedome",
+   "search": "Moviedome Deutschland",
+   "group": "Кино на немецком (Deutsch)",
+   "min_minutes": 60,
+   "max": 1000
   }
  ]
 }

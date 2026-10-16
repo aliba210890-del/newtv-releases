@@ -79,7 +79,7 @@ def channel_id(ch, cache):
     return cid
 
 
-def fetch_channel(cid, min_minutes):
+def fetch_channel(cid, min_minutes, limit=5000):
     r = api("channels", part="contentDetails", id=cid)
     items = (r or {}).get("items") or []
     if not items:
@@ -95,7 +95,7 @@ def fetch_channel(cid, min_minutes):
             break
         ids += [it["contentDetails"]["videoId"] for it in r.get("items", [])]
         token = r.get("nextPageToken")
-        if not token or len(ids) >= 5000:
+        if not token or len(ids) >= limit:
             break
     out = []
     for n in range(0, len(ids), 50):
@@ -181,18 +181,21 @@ def main(cfg_path, dst, cache_path):
     except (OSError, ValueError):
         cache = {}
     fresh = time.time() - cache.get("updated", 0) < REFRESH_HOURS * 3600
-    if os.environ.get("YOUTUBE_API_KEY") and not fresh:
-        videos = {}
-        for ch in cfg["channels"]:
+    known = cache.get("videos") or {}
+    missing = [ch for ch in cfg["channels"] if cache.get("id:" + (ch.get("handle") or ch["name"])) not in known]
+    if os.environ.get("YOUTUBE_API_KEY") and (not fresh or missing):
+        videos = dict(known) if fresh else {}
+        for ch in (missing if fresh else cfg["channels"]):
             cid = channel_id(ch, cache)
             if not cid:
                 continue
-            vids = fetch_channel(cid, ch.get("min_minutes", 55))
+            vids = fetch_channel(cid, ch.get("min_minutes", 55), ch.get("max", 5000))
             print(ch.get("handle") or ch["name"], "— фильмов:", len(vids))
             videos[cid] = vids
         if sum(len(v) for v in videos.values()):
             cache["videos"] = videos
-            cache["updated"] = int(time.time())
+            if not fresh:
+                cache["updated"] = int(time.time())
         json.dump(cache, open(cache_path, "w", encoding="utf-8"), ensure_ascii=False, indent=0, sort_keys=True)
     elif not os.environ.get("YOUTUBE_API_KEY"):
         print("YOUTUBE_API_KEY не задан — беру список из кэша")
@@ -243,7 +246,7 @@ def main(cfg_path, dst, cache_path):
     out = []
     for l in lines:
         m = re.match(r'#EXTINF:-1 group-title="([^"]*)"', l)
-        if m and (cnt[m.group(1)] < 10 or ":" not in m.group(1)):
+        if m and ":" in m.group(1) and cnt[m.group(1)] < 10:
             base = m.group(1).split(":")[0]
             l = l.replace('group-title="' + m.group(1) + '"', 'group-title="' + base + ': Разное"', 1)
         out.append(l)
