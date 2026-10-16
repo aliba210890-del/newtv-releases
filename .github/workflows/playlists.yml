@@ -35,13 +35,15 @@ jobs:
       - name: Свой кинозал (YouTube)
         run: |
           YOUTUBE_API_KEY="${{ secrets.YOUTUBE_API_KEY }}" python3 playlists/yt_catalog.py playlists/yt_channels.json /tmp/out/classic.m3u playlists/yt_cache.json || echo "::warning::YouTube недоступен — без своего кинозала в этот раз"
-          [ -s /tmp/out/classic.m3u ] && cat /tmp/out/classic.m3u >> /tmp/out/films.m3u || true
+          # films — для любых плееров (без YouTube); kino — для приложения New TV (вместе с фильмами с YouTube)
+          cp /tmp/out/films.m3u /tmp/out/kino.m3u
+          [ -s /tmp/out/classic.m3u ] && cat /tmp/out/classic.m3u >> /tmp/out/kino.m3u || true
 
       # Шифруем для сервера New TV (открытые .m3u в репозиторий не попадают)
       - name: Зашифровать для сервера
         run: |
           pip install --quiet cryptography
-          for n in films tv; do
+          for n in films kino tv; do
             python3 playlists/encrypt.py /tmp/out/$n.m3u playlists/$n.enc || echo "::warning::$n: сервер не отдал ключ — оставляю прежний файл"
           done
 
