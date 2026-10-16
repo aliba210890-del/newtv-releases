@@ -138,7 +138,7 @@
    "group": "Мультфильмы на казахском (Қазақша)",
    "min_minutes": 5,
    "max": 3000,
-   "exclude": "live|тікелей|прямой эфир|ертегі оқиды"
+   "exclude": "liv[eе]|тікелей|прямой эфир|ертегі оқиды|жаңалық"
   },
   {
    "name": "Qazaqstan TV",
@@ -154,7 +154,8 @@
    "group": "Мультфильмы на украинском (Українською)",
    "min_minutes": 5,
    "max": 1000,
-   "foreign": true
+   "foreign": true,
+   "exclude": "english subtitles|\\[english"
   },
   {
    "name": "Бробакс",
@@ -178,7 +179,8 @@
    "group": "Польское кино (Polski)",
    "min_minutes": 55,
    "max": 1000,
-   "foreign": true
+   "foreign": true,
+   "search": "Studio Filmowe KADR"
   },
   {
    "name": "Studio Filmowe TOR",
@@ -186,7 +188,8 @@
    "group": "Польское кино (Polski)",
    "min_minutes": 55,
    "max": 1000,
-   "foreign": true
+   "foreign": true,
+   "search": "Studio Filmowe TOR"
   },
   {
    "name": "Studio Filmów Rysunkowych",
@@ -194,7 +197,8 @@
    "group": "Мультфильмы на польском (Polski)",
    "min_minutes": 5,
    "max": 1000,
-   "foreign": true
+   "foreign": true,
+   "exclude": "rozmowa|jak powstaj|wywiad|zwiastun|making of|kulisy"
   },
   {
    "name": "Peppa Pig Polski",
@@ -204,14 +208,6 @@
    "max": 600,
    "foreign": true,
    "exclude": "live"
-  },
-  {
-   "name": "Česká filmová klasika",
-   "id": "UCYaOg_rguYLsHrz2IjlvnGQ",
-   "group": "Чешское кино (Čeština)",
-   "min_minutes": 55,
-   "max": 1000,
-   "foreign": true
   },
   {
    "name": "Peppa Pig Deutsch",
@@ -225,7 +221,7 @@
   {
    "name": "Swell Film Production",
    "id": "UCgN_VU99ugR-LCGYXWRvGGg",
-   "group": "Кино на казахском (Қазақша)",
+   "group": "Казахстанские фильмы и сериалы",
    "min_minutes": 55,
    "max": 1000,
    "foreign": true

@@ -256,7 +256,10 @@ def main(cfg_path, dst, cache_path):
                 cnt[sname] = cnt.get(sname, 0) + 1
                 disp.setdefault(sname, orig)
             top = {k for k, c in sorted(cnt.items(), key=lambda x: -x[1])[:ch["series_groups"]] if c >= 5}
+        inc, exc = ch.get("include"), ch.get("exclude")
         for v in vids:
+            if (inc and not re.search(inc, v["title"], re.I)) or (exc and re.search(exc, v["title"], re.I)):
+                continue  # фильтр применяется и к уже сохранённому списку
             name, year, text = parse_foreign(v["title"], ch.get("title_part", 0)) if ch.get("foreign") or "Зарубеж" in ch["group"] or "немецк" in ch["group"] else parse_title(v["title"])
             k = (name.lower(), year)
             if k in seen:
