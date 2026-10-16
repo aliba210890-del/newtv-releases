@@ -121,6 +121,23 @@ def fetch_channel(cid, min_minutes, limit=5000):
 EMOJI = re.compile("[\U0001F000-\U0001FFFF☀-➿⬀-⯿️‍]+")
 
 
+FOREIGN_JUNK = re.compile(r"\s*[-–—:(|]\s*(?:jetzt\s+)?(?:den\s+)?ganze[nr]?\s+film.*$|\s*[-–—]\s*kostenlos.*$|\s*\|?\s*(?:free\s+)?(?:full\s+)?movie.*$|\s+bei moviedome.*$", re.I)
+
+
+def parse_foreign(title, part=0):
+    """Заголовки зарубежных каналов: «Hook | Room for Rent | Thriller | Free Movie», «Mulan - Legende … - Ganzen Film kostenlos …»."""
+    parts = [x.strip() for x in title.split("|")]
+    t = parts[part] if len(parts) > part else parts[0]
+    t = re.sub(r"\s*\([^)]*(?:ganze[nr]? film|komplett|full movie)[^)]*\)?.*$", "", t, flags=re.I)
+    t = FOREIGN_JUNK.sub("", t)
+    t = re.sub(r"\s+-\s+(?:spannende[rs]?|packende[rs]?|romantische[rs]?|lustige[rs]?)\s+\w+$", "", t, flags=re.I)
+    t = re.sub(r"\s*\((?:[^()]*ganzer film[^()]*|[^()]*komplett[^()]*)\)\s*", " ", t, flags=re.I)
+    if ":" in t and re.search(r"wahnsinn|klassiker|so (?:gut|spannend)|muss man|unglaublich", t.split(":")[0], re.I):
+        t = t.split(":", 1)[1]
+    years = re.findall(r"\b(19[2-9]\d|20[0-2]\d)\b", title)
+    return re.sub(r"\s+", " ", t).strip(' "-–—:'), (int(years[0]) if years else None), title.lower()
+
+
 def parse_title(title):
     """Название, год и текст для поиска жанра из заголовка видео. Номер серии остаётся в названии.
     «Иван Васильевич меняет профессию (FullHD, комедия, реж. Леонид Гайдай, 1973 г.)»,
@@ -214,7 +231,7 @@ def main(cfg_path, dst, cache_path):
                 disp.setdefault(sname, orig)
             top = {k for k, c in sorted(cnt.items(), key=lambda x: -x[1])[:ch["series_groups"]] if c >= 5}
         for v in vids:
-            name, year, text = parse_title(v["title"])
+            name, year, text = parse_foreign(v["title"], ch.get("title_part", 0)) if "Зарубеж" in ch["group"] or "немецк" in ch["group"] else parse_title(v["title"])
             k = (name.lower(), year)
             if k in seen:
                 continue
