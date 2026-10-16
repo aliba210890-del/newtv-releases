@@ -1,11 +1,11 @@
 {
- "v": 2,
+ "v": 3,
  "cats": [
   "Русские хиты",
   "Советские и ретро",
-  "Казахские",
-  "Немецкие",
-  "Английские",
+  "Қазақша · Әндер",
+  "Deutsch · Lieder",
+  "English · Songs",
   "Детские"
  ],
  "songs": [
@@ -465,7 +465,7 @@
    ]
   },
   {
-   "g": "Казахские",
+   "g": "Қазақша · Әндер",
    "a": "Ескендір Хасанғалиев",
    "t": "Атамекен",
    "ids": [
@@ -474,7 +474,7 @@
    ]
   },
   {
-   "g": "Казахские",
+   "g": "Қазақша · Әндер",
    "a": "Шәмші Қалдаяқов",
    "t": "Ана туралы жыр",
    "ids": [
@@ -483,7 +483,7 @@
    ]
   },
   {
-   "g": "Казахские",
+   "g": "Қазақша · Әндер",
    "a": "Роза Рымбаева",
    "t": "Любовь настала",
    "ids": [
@@ -493,7 +493,7 @@
    ]
   },
   {
-   "g": "Казахские",
+   "g": "Қазақша · Әндер",
    "a": "A'Studio (Батырхан Шукенов)",
    "t": "Нелюбимая",
    "ids": [
@@ -501,7 +501,7 @@
    ]
   },
   {
-   "g": "Казахские",
+   "g": "Қазақша · Әндер",
    "a": "Ninety One",
    "t": "Қайтадан",
    "ids": [
@@ -509,7 +509,7 @@
    ]
   },
   {
-   "g": "Казахские",
+   "g": "Қазақша · Әндер",
    "a": "Ninety One",
    "t": "Men Emes",
    "ids": [
@@ -517,7 +517,7 @@
    ]
   },
   {
-   "g": "Казахские",
+   "g": "Қазақша · Әндер",
    "a": "Мөлдір Әуелбекова",
    "t": "Әдемі қыз",
    "ids": [
@@ -525,7 +525,7 @@
    ]
   },
   {
-   "g": "Казахские",
+   "g": "Қазақша · Әндер",
    "a": "Мөлдір Әуелбекова",
    "t": "Есіңе мені алғайсың",
    "ids": [
@@ -533,7 +533,7 @@
    ]
   },
   {
-   "g": "Казахские",
+   "g": "Қазақша · Әндер",
    "a": "Ерболат Құдайберген",
    "t": "Мен қазақпын",
    "ids": [
@@ -541,7 +541,7 @@
    ]
   },
   {
-   "g": "Казахские",
+   "g": "Қазақша · Әндер",
    "a": "Халық әні",
    "t": "Елім-ай",
    "ids": [
@@ -551,7 +551,7 @@
    ]
   },
   {
-   "g": "Казахские",
+   "g": "Қазақша · Әндер",
    "a": "Халық әні",
    "t": "Дударай",
    "ids": [
@@ -559,7 +559,7 @@
    ]
   },
   {
-   "g": "Казахские",
+   "g": "Қазақша · Әндер",
    "a": "Халық әні",
    "t": "Гәкку",
    "ids": [
@@ -567,7 +567,7 @@
    ]
   },
   {
-   "g": "Казахские",
+   "g": "Қазақша · Әндер",
    "a": "Нұрғиса Тілендиев",
    "t": "Өз елім",
    "ids": [
@@ -575,7 +575,7 @@
    ]
   },
   {
-   "g": "Казахские",
+   "g": "Қазақша · Әндер",
    "a": "Jah Khalib",
    "t": "Медина",
    "ids": [
@@ -583,7 +583,7 @@
    ]
   },
   {
-   "g": "Казахские",
+   "g": "Қазақша · Әндер",
    "a": "Қайрат Нұртас",
    "t": "Алматының түндері-ай",
    "ids": [
@@ -591,7 +591,7 @@
    ]
   },
   {
-   "g": "Казахские",
+   "g": "Қазақша · Әндер",
    "a": "Қайрат Нұртас",
    "t": "Сені сүйем",
    "ids": [
@@ -600,7 +600,7 @@
    ]
   },
   {
-   "g": "Казахские",
+   "g": "Қазақша · Әндер",
    "a": "Қайрат Нұртас",
    "t": "Бәрі дұрыс па",
    "ids": [
@@ -608,7 +608,7 @@
    ]
   },
   {
-   "g": "Казахские",
+   "g": "Қазақша · Әндер",
    "a": "Қайрат Нұртас",
    "t": "Жалғыз сен",
    "ids": [
@@ -616,7 +616,7 @@
    ]
   },
   {
-   "g": "Казахские",
+   "g": "Қазақша · Әндер",
    "a": "Мадина Садуақасова",
    "t": "Махаббат жалыны",
    "ids": [
@@ -624,7 +624,7 @@
    ]
   },
   {
-   "g": "Немецкие",
+   "g": "Deutsch · Lieder",
    "a": "Helene Fischer",
    "t": "Atemlos durch die Nacht",
    "ids": [
@@ -633,7 +633,7 @@
    ]
   },
   {
-   "g": "Немецкие",
+   "g": "Deutsch · Lieder",
    "a": "Nena",
    "t": "99 Luftballons",
    "ids": [
@@ -641,7 +641,7 @@
    ]
   },
   {
-   "g": "Немецкие",
+   "g": "Deutsch · Lieder",
    "a": "Nena",
    "t": "Irgendwie, irgendwo, irgendwann",
    "ids": [
@@ -650,7 +650,7 @@
    ]
   },
   {
-   "g": "Немецкие",
+   "g": "Deutsch · Lieder",
    "a": "Wolfgang Petry",
    "t": "Wahnsinn",
    "ids": [
@@ -659,7 +659,7 @@
    ]
   },
   {
-   "g": "Немецкие",
+   "g": "Deutsch · Lieder",
    "a": "Andrea Berg",
    "t": "Du hast mich tausendmal belogen",
    "ids": [
@@ -667,7 +667,7 @@
    ]
   },
   {
-   "g": "Немецкие",
+   "g": "Deutsch · Lieder",
    "a": "Udo Jürgens",
    "t": "Griechischer Wein",
    "ids": [
@@ -676,7 +676,7 @@
    ]
   },
   {
-   "g": "Немецкие",
+   "g": "Deutsch · Lieder",
    "a": "Udo Jürgens",
    "t": "Aber bitte mit Sahne",
    "ids": [
@@ -686,7 +686,7 @@
    ]
   },
   {
-   "g": "Немецкие",
+   "g": "Deutsch · Lieder",
    "a": "Peter Maffay",
    "t": "Über sieben Brücken musst du gehn",
    "ids": [
@@ -694,7 +694,7 @@
    ]
   },
   {
-   "g": "Немецкие",
+   "g": "Deutsch · Lieder",
    "a": "Matthias Reim",
    "t": "Verdammt, ich lieb' dich",
    "ids": [
@@ -703,7 +703,7 @@
    ]
   },
   {
-   "g": "Немецкие",
+   "g": "Deutsch · Lieder",
    "a": "Roland Kaiser",
    "t": "Santa Maria",
    "ids": [
@@ -711,7 +711,7 @@
    ]
   },
   {
-   "g": "Немецкие",
+   "g": "Deutsch · Lieder",
    "a": "DJ Ötzi und Nik P.",
    "t": "Ein Stern (der deinen Namen trägt)",
    "ids": [
@@ -719,7 +719,7 @@
    ]
   },
   {
-   "g": "Немецкие",
+   "g": "Deutsch · Lieder",
    "a": "Dschinghis Khan",
    "t": "Moskau",
    "ids": [
@@ -728,7 +728,7 @@
    ]
   },
   {
-   "g": "Немецкие",
+   "g": "Deutsch · Lieder",
    "a": "Münchener Freiheit",
    "t": "Ohne dich (schlaf' ich heut' Nacht nicht ein)",
    "ids": [
@@ -738,7 +738,7 @@
    ]
   },
   {
-   "g": "Немецкие",
+   "g": "Deutsch · Lieder",
    "a": "Spider Murphy Gang",
    "t": "Skandal im Sperrbezirk",
    "ids": [
@@ -746,7 +746,7 @@
    ]
   },
   {
-   "g": "Немецкие",
+   "g": "Deutsch · Lieder",
    "a": "Nicole",
    "t": "Ein bisschen Frieden",
    "ids": [
@@ -754,7 +754,7 @@
    ]
   },
   {
-   "g": "Немецкие",
+   "g": "Deutsch · Lieder",
    "a": "Herbert Grönemeyer",
    "t": "Männer",
    "ids": [
@@ -764,7 +764,7 @@
    ]
   },
   {
-   "g": "Немецкие",
+   "g": "Deutsch · Lieder",
    "a": "Falco",
    "t": "Rock Me Amadeus",
    "ids": [
@@ -773,7 +773,7 @@
    ]
   },
   {
-   "g": "Немецкие",
+   "g": "Deutsch · Lieder",
    "a": "Pur",
    "t": "Abenteuerland",
    "ids": [
@@ -781,7 +781,7 @@
    ]
   },
   {
-   "g": "Немецкие",
+   "g": "Deutsch · Lieder",
    "a": "Die Toten Hosen",
    "t": "Tage wie diese",
    "ids": [
@@ -790,7 +790,7 @@
    ]
   },
   {
-   "g": "Немецкие",
+   "g": "Deutsch · Lieder",
    "a": "Silbermond",
    "t": "Das Beste",
    "ids": [
@@ -798,7 +798,7 @@
    ]
   },
   {
-   "g": "Немецкие",
+   "g": "Deutsch · Lieder",
    "a": "Juli",
    "t": "Perfekte Welle",
    "ids": [
@@ -807,7 +807,7 @@
    ]
   },
   {
-   "g": "Немецкие",
+   "g": "Deutsch · Lieder",
    "a": "Andreas Bourani",
    "t": "Auf uns",
    "ids": [
@@ -816,7 +816,7 @@
    ]
   },
   {
-   "g": "Немецкие",
+   "g": "Deutsch · Lieder",
    "a": "Tim Bendzko",
    "t": "Nur noch kurz die Welt retten",
    "ids": [
@@ -825,7 +825,7 @@
    ]
   },
   {
-   "g": "Немецкие",
+   "g": "Deutsch · Lieder",
    "a": "Mark Forster",
    "t": "Chöre",
    "ids": [
@@ -834,7 +834,7 @@
    ]
   },
   {
-   "g": "Английские",
+   "g": "English · Songs",
    "a": "Modern Talking",
    "t": "You're My Heart, You're My Soul",
    "ids": [
@@ -843,7 +843,7 @@
    ]
   },
   {
-   "g": "Английские",
+   "g": "English · Songs",
    "a": "Modern Talking",
    "t": "Cheri Cheri Lady",
    "ids": [
@@ -852,7 +852,7 @@
    ]
   },
   {
-   "g": "Английские",
+   "g": "English · Songs",
    "a": "Boney M.",
    "t": "Rasputin",
    "ids": [
@@ -861,7 +861,7 @@
    ]
   },
   {
-   "g": "Английские",
+   "g": "English · Songs",
    "a": "Boney M.",
    "t": "Daddy Cool",
    "ids": [
@@ -870,7 +870,7 @@
    ]
   },
   {
-   "g": "Английские",
+   "g": "English · Songs",
    "a": "ABBA",
    "t": "Dancing Queen",
    "ids": [
@@ -878,7 +878,7 @@
    ]
   },
   {
-   "g": "Английские",
+   "g": "English · Songs",
    "a": "ABBA",
    "t": "Mamma Mia",
    "ids": [
@@ -887,7 +887,7 @@
    ]
   },
   {
-   "g": "Английские",
+   "g": "English · Songs",
    "a": "Queen",
    "t": "Don't Stop Me Now",
    "ids": [
@@ -895,7 +895,7 @@
    ]
   },
   {
-   "g": "Английские",
+   "g": "English · Songs",
    "a": "Queen",
    "t": "Bohemian Rhapsody",
    "ids": [
@@ -903,7 +903,7 @@
    ]
   },
   {
-   "g": "Английские",
+   "g": "English · Songs",
    "a": "Scorpions",
    "t": "Wind of Change",
    "ids": [
@@ -913,7 +913,7 @@
    ]
   },
   {
-   "g": "Английские",
+   "g": "English · Songs",
    "a": "Scorpions",
    "t": "Still Loving You",
    "ids": [
@@ -923,7 +923,7 @@
    ]
   },
   {
-   "g": "Английские",
+   "g": "English · Songs",
    "a": "Whitney Houston",
    "t": "I Will Always Love You",
    "ids": [
@@ -932,7 +932,7 @@
    ]
   },
   {
-   "g": "Английские",
+   "g": "English · Songs",
    "a": "Celine Dion",
    "t": "My Heart Will Go On",
    "ids": [
@@ -941,7 +941,7 @@
    ]
   },
   {
-   "g": "Английские",
+   "g": "English · Songs",
    "a": "Gloria Gaynor",
    "t": "I Will Survive",
    "ids": [
@@ -950,7 +950,7 @@
    ]
   },
   {
-   "g": "Английские",
+   "g": "English · Songs",
    "a": "Bon Jovi",
    "t": "Livin' on a Prayer",
    "ids": [
@@ -959,7 +959,7 @@
    ]
   },
   {
-   "g": "Английские",
+   "g": "English · Songs",
    "a": "Europe",
    "t": "The Final Countdown",
    "ids": [
@@ -968,7 +968,7 @@
    ]
   },
   {
-   "g": "Английские",
+   "g": "English · Songs",
    "a": "Bryan Adams",
    "t": "Summer of '69",
    "ids": [
@@ -976,7 +976,7 @@
    ]
   },
   {
-   "g": "Английские",
+   "g": "English · Songs",
    "a": "The Beatles",
    "t": "Yesterday",
    "ids": [
@@ -985,7 +985,7 @@
    ]
   },
   {
-   "g": "Английские",
+   "g": "English · Songs",
    "a": "Michael Jackson",
    "t": "Billie Jean",
    "ids": [
@@ -995,7 +995,7 @@
    ]
   },
   {
-   "g": "Английские",
+   "g": "English · Songs",
    "a": "Backstreet Boys",
    "t": "I Want It That Way",
    "ids": [
@@ -1004,7 +1004,7 @@
    ]
   },
   {
-   "g": "Английские",
+   "g": "English · Songs",
    "a": "Aqua",
    "t": "Barbie Girl",
    "ids": [
@@ -1012,7 +1012,7 @@
    ]
   },
   {
-   "g": "Английские",
+   "g": "English · Songs",
    "a": "Adele",
    "t": "Someone Like You",
    "ids": [
@@ -1020,7 +1020,7 @@
    ]
   },
   {
-   "g": "Английские",
+   "g": "English · Songs",
    "a": "Ed Sheeran",
    "t": "Perfect",
    "ids": [
@@ -1029,7 +1029,7 @@
    ]
   },
   {
-   "g": "Английские",
+   "g": "English · Songs",
    "a": "Bruno Mars",
    "t": "Just the Way You Are",
    "ids": [
@@ -1037,7 +1037,7 @@
    ]
   },
   {
-   "g": "Английские",
+   "g": "English · Songs",
    "a": "Lady Gaga и Bradley Cooper",
    "t": "Shallow",
    "ids": [
@@ -1045,7 +1045,7 @@
    ]
   },
   {
-   "g": "Английские",
+   "g": "English · Songs",
    "a": "Wham!",
    "t": "Last Christmas",
    "ids": [
@@ -1054,7 +1054,7 @@
    ]
   },
   {
-   "g": "Английские",
+   "g": "English · Songs",
    "a": "Mariah Carey",
    "t": "All I Want for Christmas Is You",
    "ids": [
