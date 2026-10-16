@@ -81,7 +81,7 @@ def channel_id(ch, cache):
     return cid
 
 
-def fetch_channel(cid, min_minutes, limit=5000):
+def fetch_channel(cid, min_minutes, limit=5000, include=None, exclude=None):
     r = api("channels", part="contentDetails", id=cid)
     items = (r or {}).get("items") or []
     if not items:
@@ -113,6 +113,11 @@ def fetch_channel(cid, min_minutes, limit=5000):
                 continue
             title = sn.get("title", "")
             if any(w in title.lower() for w in SKIP_WORDS):
+                continue
+            # у телеканалов в загрузках и новости, и шоу: берём только нужное (например, «телехикая», «бөлім»)
+            if include and not re.search(include, title, re.I):
+                continue
+            if exclude and re.search(exclude, title, re.I):
                 continue
             th = sn.get("thumbnails", {})
             img = (th.get("maxres") or th.get("standard") or th.get("high") or th.get("medium") or {}).get("url", "")
@@ -227,7 +232,7 @@ def main(cfg_path, dst, cache_path):
             cid = channel_id(ch, cache)
             if not cid:
                 continue
-            vids = fetch_channel(cid, ch.get("min_minutes", 55), ch.get("max", 5000))
+            vids = fetch_channel(cid, ch.get("min_minutes", 55), ch.get("max", 5000), ch.get("include"), ch.get("exclude"))
             print(ch.get("handle") or ch["name"], "— фильмов:", len(vids))
             videos[cid] = vids
         if sum(len(v) for v in videos.values()):

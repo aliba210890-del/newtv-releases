@@ -107,6 +107,128 @@
    "min_minutes": 55,
    "max": 1000,
    "foreign": true
+  },
+  {
+   "name": "Star Media",
+   "id": "UCB4BRxXp2TsMCe8kU29h3Qw",
+   "group": "Сериалы (на русском)",
+   "min_minutes": 60,
+   "max": 1500,
+   "exclude": "трейлер|анонс|тизер"
+  },
+  {
+   "name": "Смешарики",
+   "handle": "@smeshariki",
+   "group": "Мультфильмы: Смешарики",
+   "min_minutes": 10,
+   "max": 800,
+   "exclude": "live|прямой эфир"
+  },
+  {
+   "name": "Фиксики",
+   "id": "UCh4LXQWe5NG1gCcZxZLMd7Q",
+   "group": "Мультфильмы: Фиксики",
+   "min_minutes": 10,
+   "max": 800,
+   "exclude": "live|прямой эфир|онлайн"
+  },
+  {
+   "name": "Balapan TV",
+   "id": "UCSJKvyZVC0FLiyvo3LeEllg",
+   "group": "Мультфильмы на казахском (Қазақша)",
+   "min_minutes": 5,
+   "max": 3000,
+   "exclude": "live|тікелей|прямой эфир|ертегі оқиды"
+  },
+  {
+   "name": "Qazaqstan TV",
+   "id": "UCg7YNHS1ld_LBCupWa1I_AQ",
+   "group": "Сериалы на казахском (Қазақша)",
+   "min_minutes": 30,
+   "max": 4000,
+   "include": "телехикая|бөлім"
+  },
+  {
+   "name": "Укранимафильм",
+   "search": "Ukranima ukranimaua мультфільми",
+   "group": "Мультфильмы на украинском (Українською)",
+   "min_minutes": 5,
+   "max": 1000,
+   "foreign": true
+  },
+  {
+   "name": "Бробакс",
+   "handle": "@Brobaks",
+   "group": "Мультфильмы на украинском (Українською)",
+   "min_minutes": 5,
+   "max": 1000,
+   "foreign": true
+  },
+  {
+   "name": "Одесская киностудия",
+   "id": "UCxh_TkSralaVxmsLNYCXeoQ",
+   "group": "Кино Украины (Одесская киностудия)",
+   "min_minutes": 55,
+   "max": 1500,
+   "foreign": true
+  },
+  {
+   "name": "Studio Filmowe KADR",
+   "handle": "@studiofilmowekadr",
+   "group": "Польское кино (Polski)",
+   "min_minutes": 55,
+   "max": 1000,
+   "foreign": true
+  },
+  {
+   "name": "Studio Filmowe TOR",
+   "handle": "@studiofilmowetor",
+   "group": "Польское кино (Polski)",
+   "min_minutes": 55,
+   "max": 1000,
+   "foreign": true
+  },
+  {
+   "name": "Studio Filmów Rysunkowych",
+   "handle": "@studiofilmowrysunkowych",
+   "group": "Мультфильмы на польском (Polski)",
+   "min_minutes": 5,
+   "max": 1000,
+   "foreign": true
+  },
+  {
+   "name": "Peppa Pig Polski",
+   "id": "UCppKzvf9-RJM_Bxj2J15FlQ",
+   "group": "Мультфильмы на польском (Polski)",
+   "min_minutes": 15,
+   "max": 600,
+   "foreign": true,
+   "exclude": "live"
+  },
+  {
+   "name": "Česká filmová klasika",
+   "id": "UCYaOg_rguYLsHrz2IjlvnGQ",
+   "group": "Чешское кино (Čeština)",
+   "min_minutes": 55,
+   "max": 1000,
+   "foreign": true
+  },
+  {
+   "name": "Peppa Pig Deutsch",
+   "id": "UCNclt7O1bO7hz8Mari68neg",
+   "group": "Мультфильмы на немецком (Deutsch)",
+   "min_minutes": 15,
+   "max": 600,
+   "foreign": true,
+   "exclude": "live"
+  },
+  {
+   "name": "Swell Film Production",
+   "id": "UCgN_VU99ugR-LCGYXWRvGGg",
+   "group": "Кино на казахском (Қазақша)",
+   "min_minutes": 55,
+   "max": 1000,
+   "foreign": true
   }
  ]
 }
