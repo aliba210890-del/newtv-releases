@@ -5,8 +5,6 @@
    "handle": "@mosfilm",
    "search": "Киноконцерн Мосфильм",
    "group": "Советское кино",
-   "genres": true,
-   "other": "Разное",
    "min_minutes": 55
   },
   {
@@ -14,8 +12,6 @@
    "handle": "@lenfilm",
    "search": "Ленфильм официальный канал",
    "group": "Советское кино",
-   "genres": true,
-   "other": "Разное",
    "min_minutes": 55
   },
   {
@@ -23,8 +19,6 @@
    "handle": "@gorkyfilmstudio",
    "search": "Киностудия имени Горького",
    "group": "Советское кино",
-   "genres": true,
-   "other": "Разное",
    "min_minutes": 55
   },
   {
@@ -32,54 +26,58 @@
    "handle": "@soyuzmultfilm",
    "search": "Союзмультфильм",
    "group": "Мультфильмы",
-   "min_minutes": 4,
-   "series_groups": 6
+   "min_minutes": 4
   },
   {
    "name": "Paramount Vault",
    "handle": "@ParamountVault",
    "search": "Paramount Vault",
-   "group": "Зарубежное кино (English)",
+   "group": "Movies",
    "min_minutes": 60,
    "max": 1000,
-   "title_part": 1
+   "title_part": 1,
+   "foreign": true
   },
   {
    "name": "FilmRise Movies",
    "handle": "@FilmRiseMovies",
    "search": "FilmRise Movies",
-   "group": "Зарубежное кино (English)",
+   "group": "Movies",
    "min_minutes": 60,
-   "max": 1000
+   "max": 1000,
+   "foreign": true
   },
   {
    "name": "Popcornflix",
    "handle": "@Popcornflix",
    "search": "Popcornflix",
-   "group": "Зарубежное кино (English)",
+   "group": "Movies",
    "min_minutes": 60,
-   "max": 1000
+   "max": 1000,
+   "foreign": true
   },
   {
    "name": "Netzkino",
    "handle": "@netzkino",
    "search": "Netzkino",
-   "group": "Кино на немецком (Deutsch)",
+   "group": "Filme",
    "min_minutes": 60,
-   "max": 1000
+   "max": 1000,
+   "foreign": true
   },
   {
    "name": "Moviedome",
    "handle": "@moviedome",
    "search": "Moviedome Deutschland",
-   "group": "Кино на немецком (Deutsch)",
+   "group": "Filme",
    "min_minutes": 60,
-   "max": 1000
+   "max": 1000,
+   "foreign": true
   },
   {
    "name": "Казахфильм",
    "search": "Qazaqfilm Казахфильм",
-   "group": "Кино на казахском (Қазақша)",
+   "group": "Қазақ киносы",
    "min_minutes": 55,
    "max": 1000,
    "foreign": true
@@ -87,7 +85,7 @@
   {
    "name": "Беларусьфильм2",
    "search": "Беларусьфильм киностудия фильмы",
-   "group": "Белорусское кино",
+   "group": "Беларускае кіно",
    "min_minutes": 55,
    "max": 1000,
    "foreign": true
@@ -95,7 +93,7 @@
   {
    "name": "Арменфильм",
    "search": "Armenfilm Hayfilm",
-   "group": "Армянское кино (Հայերեն)",
+   "group": "Հայկական կինո",
    "min_minutes": 55,
    "max": 1000,
    "foreign": true
@@ -103,7 +101,7 @@
   {
    "name": "Азербайджанфильм",
    "search": "Azerbaijanfilm Азербайджанфильм",
-   "group": "Азербайджанское кино (Azərbaycanca)",
+   "group": "Azərbaycan kinosu",
    "min_minutes": 55,
    "max": 1000,
    "foreign": true
@@ -111,7 +109,7 @@
   {
    "name": "Star Media",
    "id": "UCB4BRxXp2TsMCe8kU29h3Qw",
-   "group": "Сериалы (на русском)",
+   "group": "Сериалы",
    "min_minutes": 60,
    "max": 1500,
    "exclude": "трейлер|анонс|тизер"
@@ -119,7 +117,7 @@
   {
    "name": "Смешарики",
    "handle": "@smeshariki",
-   "group": "Мультфильмы: Смешарики",
+   "group": "Мультфильмы",
    "min_minutes": 10,
    "max": 800,
    "exclude": "live|прямой эфир"
@@ -127,7 +125,7 @@
   {
    "name": "Фиксики",
    "id": "UCh4LXQWe5NG1gCcZxZLMd7Q",
-   "group": "Мультфильмы: Фиксики",
+   "group": "Мультфильмы",
    "min_minutes": 10,
    "max": 800,
    "exclude": "live|прямой эфир|онлайн"
@@ -135,7 +133,7 @@
   {
    "name": "Balapan TV",
    "id": "UCSJKvyZVC0FLiyvo3LeEllg",
-   "group": "Мультфильмы на казахском (Қазақша)",
+   "group": "Мультфильмдер",
    "min_minutes": 5,
    "max": 3000,
    "exclude": "liv[eе]|тікелей|прямой эфир|ертегі оқиды|жаңалық"
@@ -143,7 +141,7 @@
   {
    "name": "Qazaqstan TV",
    "id": "UCg7YNHS1ld_LBCupWa1I_AQ",
-   "group": "Сериалы на казахском (Қазақша)",
+   "group": "Телехикаялар",
    "min_minutes": 30,
    "max": 4000,
    "include": "телехикая|бөлім"
@@ -151,7 +149,7 @@
   {
    "name": "Укранимафильм",
    "search": "Ukranima ukranimaua мультфільми",
-   "group": "Мультфильмы на украинском (Українською)",
+   "group": "Мультфільми",
    "min_minutes": 5,
    "max": 1000,
    "foreign": true,
@@ -160,7 +158,7 @@
   {
    "name": "Бробакс",
    "handle": "@Brobaks",
-   "group": "Мультфильмы на украинском (Українською)",
+   "group": "Мультфільми",
    "min_minutes": 5,
    "max": 1000,
    "foreign": true
@@ -168,7 +166,7 @@
   {
    "name": "Одесская киностудия",
    "id": "UCxh_TkSralaVxmsLNYCXeoQ",
-   "group": "Кино Украины (Одесская киностудия)",
+   "group": "Українське кіно",
    "min_minutes": 55,
    "max": 1500,
    "foreign": true
@@ -176,7 +174,7 @@
   {
    "name": "Studio Filmów Rysunkowych",
    "handle": "@studiofilmowrysunkowych",
-   "group": "Мультфильмы на польском (Polski)",
+   "group": "Bajki",
    "min_minutes": 5,
    "max": 1000,
    "foreign": true,
@@ -185,7 +183,7 @@
   {
    "name": "Peppa Pig Polski",
    "id": "UCppKzvf9-RJM_Bxj2J15FlQ",
-   "group": "Мультфильмы на польском (Polski)",
+   "group": "Bajki",
    "min_minutes": 15,
    "max": 600,
    "foreign": true,
@@ -194,7 +192,7 @@
   {
    "name": "Peppa Pig Deutsch",
    "id": "UCNclt7O1bO7hz8Mari68neg",
-   "group": "Мультфильмы на немецком (Deutsch)",
+   "group": "Kinderfilme",
    "min_minutes": 15,
    "max": 600,
    "foreign": true,
@@ -203,7 +201,7 @@
   {
    "name": "Swell Film Production",
    "id": "UCgN_VU99ugR-LCGYXWRvGGg",
-   "group": "Казахстанские фильмы и сериалы",
+   "group": "Қазақ киносы",
    "min_minutes": 55,
    "max": 1000,
    "foreign": true

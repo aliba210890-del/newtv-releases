@@ -349,7 +349,17 @@ def main(src, dst, cache_path, tmdb_path=None):
 
     groups = {}  # категория → список блоков
 
+    seen_in = {}  # без повторов внутри одной категории
+
     def put(g, block):
+        # все мультфильмы — одной категорией «Мультфильмы» (по годам и сериалам не делим: есть поиск)
+        if g.startswith("Мультфильм") or g.startswith("Мультсериал") or g == "Новые мультфильмы":
+            g = "Мультфильмы"
+        url = next((l for l in block if l and not l.startswith("#")), "")
+        s = seen_in.setdefault(g, set())
+        if url and url in s:
+            return
+        s.add(url)
         groups.setdefault(g, []).append(with_group(block, g))
 
     # 1) новинки — как были; 2) 4K — отдельной полкой; 3) все фильмы — по жанрам (без повторов: 4K-версия важнее)
