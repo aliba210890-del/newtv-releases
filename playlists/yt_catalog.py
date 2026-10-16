@@ -64,6 +64,7 @@ def channel_id(ch, cache):
         items = (r or {}).get("items") or []
         if items:
             cid = items[0]["id"]
+            cache["title:" + ch["handle"]] = items[0]["snippet"]["title"]
             print("канал", ch["handle"], "→", items[0]["snippet"]["title"], cid)
     if not cid and ch.get("search"):
         r = api("search", part="snippet", type="channel", q=ch["search"], maxResults=3)
@@ -72,6 +73,7 @@ def channel_id(ch, cache):
         items = (r or {}).get("items") or []
         if items:
             cid = items[0]["snippet"]["channelId"]
+            cache["title:" + (ch.get("handle") or ch["name"])] = items[0]["snippet"]["title"]
     if cid:
         cache[key] = cid
     else:
@@ -232,7 +234,7 @@ def main(cfg_path, dst, cache_path):
                 disp.setdefault(sname, orig)
             top = {k for k, c in sorted(cnt.items(), key=lambda x: -x[1])[:ch["series_groups"]] if c >= 5}
         for v in vids:
-            name, year, text = parse_foreign(v["title"], ch.get("title_part", 0)) if "Зарубеж" in ch["group"] or "немецк" in ch["group"] else parse_title(v["title"])
+            name, year, text = parse_foreign(v["title"], ch.get("title_part", 0)) if ch.get("foreign") or "Зарубеж" in ch["group"] or "немецк" in ch["group"] else parse_title(v["title"])
             k = (name.lower(), year)
             if k in seen:
                 continue

@@ -28,15 +28,6 @@
    "min_minutes": 55
   },
   {
-   "name": "Беларусьфильм",
-   "handle": "@belarusfilm",
-   "search": "Беларусьфильм",
-   "group": "Советское кино",
-   "genres": true,
-   "other": "Разное",
-   "min_minutes": 55
-  },
-  {
    "name": "Союзмультфильм",
    "handle": "@soyuzmultfilm",
    "search": "Союзмультфильм",
@@ -84,6 +75,62 @@
    "group": "Кино на немецком (Deutsch)",
    "min_minutes": 60,
    "max": 1000
+  },
+  {
+   "name": "Казахфильм",
+   "search": "Qazaqfilm Казахфильм",
+   "group": "Кино на казахском (Қазақша)",
+   "min_minutes": 55,
+   "max": 1000,
+   "foreign": true
+  },
+  {
+   "name": "Довженко-Центр",
+   "search": "Довженко-Центр фільми",
+   "group": "Кино на украинском (Українською)",
+   "min_minutes": 55,
+   "max": 1000,
+   "foreign": true
+  },
+  {
+   "name": "Беларусьфильм2",
+   "search": "Беларусьфильм киностудия фильмы",
+   "group": "Белорусское кино",
+   "min_minutes": 55,
+   "max": 1000,
+   "foreign": true
+  },
+  {
+   "name": "Арменфильм",
+   "search": "Armenfilm Hayfilm",
+   "group": "Армянское кино (Հայերեն)",
+   "min_minutes": 55,
+   "max": 1000,
+   "foreign": true
+  },
+  {
+   "name": "Азербайджанфильм",
+   "search": "Azerbaijanfilm Азербайджанфильм",
+   "group": "Азербайджанское кино (Azərbaycanca)",
+   "min_minutes": 55,
+   "max": 1000,
+   "foreign": true
+  },
+  {
+   "name": "Polskie filmy",
+   "search": "35mm.online Filmoteka Narodowa",
+   "group": "Польское кино (Polski)",
+   "min_minutes": 55,
+   "max": 1000,
+   "foreign": true
+  },
+  {
+   "name": "Česká filmy",
+   "search": "Národní filmový archiv filmy",
+   "group": "Чешское кино (Čeština)",
+   "min_minutes": 55,
+   "max": 1000,
+   "foreign": true
   }
  ]
 }
