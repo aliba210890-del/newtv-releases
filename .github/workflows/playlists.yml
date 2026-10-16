@@ -26,9 +26,9 @@ jobs:
           python3 playlists/clean_playlist.py /tmp/films.m3u /tmp/films_clean.m3u
           # разложить фильмы по жанрам, мультфильмы по годам (жанры ищутся в Wikidata, найденное хранится в film_genres.json)
           mkdir -p /tmp/out
-          # постеры, описания, рейтинг и жанры из TMDB (нужен секрет TMDB_API_KEY; без него шаг пропускается)
-          TMDB_API_KEY="${{ secrets.TMDB_API_KEY }}" python3 playlists/tmdb.py /tmp/films_clean.m3u playlists/film_tmdb.json || echo "::warning::TMDB недоступен — оставляю прежние данные"
-          python3 playlists/categorize.py /tmp/films_clean.m3u /tmp/out/films.m3u playlists/film_genres.json playlists/film_tmdb.json
+          # описания фильмов из русской Википедии (найденное хранится в film_wiki.json)
+          python3 playlists/wiki_plot.py /tmp/films_clean.m3u playlists/film_wiki.json || echo "::warning::Википедия недоступна — оставляю прежние описания"
+          python3 playlists/categorize.py /tmp/films_clean.m3u /tmp/out/films.m3u playlists/film_genres.json playlists/film_wiki.json
           python3 playlists/clean_playlist.py /tmp/tv.m3u /tmp/out/tv.m3u
 
       # Шифруем для сервера New TV (открытые .m3u в репозиторий не попадают)
@@ -44,5 +44,5 @@ jobs:
           git config user.name "newtv-bot"
           git config user.email "newtv-bot@users.noreply.github.com"
           git add playlists/film_genres.json playlists/*.enc
-          git add playlists/film_tmdb.json 2>/dev/null || true
+          git add playlists/film_wiki.json 2>/dev/null || true
           git diff --cached --quiet || (git commit -m "Обновить плейлисты" && git pull --rebase && git push)

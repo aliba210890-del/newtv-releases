@@ -278,7 +278,7 @@ TMDB_IMG = "https://image.tmdb.org/t/p/"
 
 
 def enrich(block, meta):
-    """Подставить постер, описание и рейтинг из TMDB в строку #EXTINF."""
+    """Подставить описание (Википедия) и, если есть, постер и рейтинг в строку #EXTINF."""
     if not meta or meta.get("miss"):
         return block
     first, name = block[0].rsplit(",", 1)
@@ -289,6 +289,8 @@ def enrich(block, meta):
     if meta.get("rating") and meta.get("votes", 0) >= 5:
         attrs += ' rating="' + str(meta["rating"]) + '"'
     plot = re.sub(r"\s+", " ", meta.get("plot") or "").replace('"', "\u201c").strip()
+    if plot and meta.get("page"):
+        plot += " (Источник: Википедия)"  # лицензия CC BY-SA требует указать источник
     if plot:
         attrs += ' description="' + plot + '"'
     return [first + attrs + "," + name] + block[1:]
