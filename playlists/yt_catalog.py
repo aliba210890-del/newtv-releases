@@ -250,6 +250,47 @@ def clean_desc(d):
     return t.replace('"', "“")
 
 
+FOREIGN_GENRES = {   # жанр по названию (а если там нет — по описанию); порядок важен: «Horrorkomödie» — это Horror
+    "de": [("Weihnachtsfilme", r"weihnacht|christmas"), ("Horror", r"horror|grusel"), ("Thriller", r"thriller|krimi|crime|mystery"),
+           ("Action", r"action|martial"), ("Sci-Fi", r"sci-?fi|science.?fiction"), ("Western", r"western"),
+           ("Komödie", r"komödie|comedy|komödi"), ("Liebesfilme", r"liebesfilm|romanze|romanti|romance|liebesdrama"),
+           ("Abenteuer", r"abenteuer|adventure"), ("Drama", r"drama"), ("Dokumentation", r"doku")],
+    "en": [("Christmas", r"christmas|holiday"), ("Horror", r"horror"), ("Thriller", r"thriller|crime|mystery|suspense"),
+           ("Action", r"action|martial"), ("Sci-Fi", r"sci-?fi|science.?fiction"), ("Western", r"western"),
+           ("Comedy", r"comedy|comedic"), ("Romance", r"romance|romantic|rom-?com"), ("Adventure", r"adventure"),
+           ("Drama", r"drama"), ("Documentary", r"documentary")],
+}
+FOREIGN_OTHER = {"de": "Weitere Filme", "en": "More Movies"}
+
+
+def foreign_genre(lang, title, desc):
+    for text in (title.lower(), desc.lower()[:300]):
+        for g, rx in FOREIGN_GENRES[lang]:
+            if re.search(rx, text):
+                return g
+    return FOREIGN_OTHER[lang]
+
+
+def series_of(ch, raw_title, name):
+    """Название мультсериала, к которому относится серия (или пусто).
+    Сериалы потом показываются в приложении одной карточкой, а серии — внутри неё."""
+    rule = ch.get("series")
+    if not rule:
+        return ""
+    if rule == "emoji":            # Союзмультфильм: «Оранжевая корова 🐮 Рок-группа ⭐ Премьера…»
+        return name.split(" — ")[0].strip() if " — " in name and EMOJI.search(raw_title) else ""
+    if rule == "kz":               # Balapan / Qazaqstan TV: «Қызық әлем. 2-маусым. 38 бөлім», ««СЫРҒАЛЫМ-2». Телехикая. 32-бөлім»
+        m = re.match(r"^\s*«?(.+?)»?\s*(?:\.\s*|\s+)(?:\d+\s*-?\s*маусым|телехикая|\d+\s*-?\s*бөлім)", raw_title, re.I)
+        if not m:
+            return ""
+        t = re.sub(r"[\s-]+\d+$", "", m.group(1).strip(' .«»"-!'))
+        t = t.strip(' .-')
+        if t.count("»") > t.count("«"):
+            t = "«" + t
+        return t.title() if t.isupper() else t[:1].upper() + t[1:]
+    return rule                    # одно название на весь канал: «Фиксики», «Peppa Wutz»
+
+
 def genre_of(text):
     for g, words in GENRES:
         if any(w in text for w in words):
@@ -283,60 +324,62 @@ def main(cfg_path, dst, cache_path):
     elif not os.environ.get("YOUTUBE_API_KEY"):
         print("YOUTUBE_API_KEY не задан — беру список из кэша")
 
-    lines, seen, n = [], set(), 0
+    rows, seen = [], set()
     for ch in cfg["channels"]:
         cid = cache.get("id:" + (ch.get("handle") or ch["name"]))
         vids = (cache.get("videos") or {}).get(cid, [])
-        top = set()
-        if ch.get("series_groups"):  # мультсериалы: самые большие — отдельными разделами
-            cnt, disp = {}, {}
-            for v in vids:
-                orig = parse_title(v["title"])[0].split(" — ")[0]
-                sname = orig.lower()
-                cnt[sname] = cnt.get(sname, 0) + 1
-                disp.setdefault(sname, orig)
-            top = {k for k, c in sorted(cnt.items(), key=lambda x: -x[1])[:ch["series_groups"]] if c >= 5}
         inc, exc = ch.get("include"), ch.get("exclude")
         for v in vids:
             if (inc and not re.search(inc, v["title"], re.I)) or (exc and re.search(exc, v["title"], re.I)):
                 continue  # фильтр применяется и к уже сохранённому списку
-            name, year, text = parse_foreign(v["title"], ch.get("title_part", 0)) if ch.get("foreign") or "Зарубеж" in ch["group"] or "немецк" in ch["group"] else parse_title(v["title"])
+            name, year, text = parse_foreign(v["title"], ch.get("title_part", 0)) if ch.get("foreign") else parse_title(v["title"])
             k = (name.lower(), year)
             if k in seen:
                 continue
             seen.add(k)
-            if ch.get("genres"):
-                g = genre_of(text)
-                group = ch["group"] + ": " + (g or "Разное")
-            elif top:
-                sname = name.split(" — ")[0]
-                group = ch["group"] + ": " + (disp[sname.lower()] if sname.lower() in top else "Разное")
-            else:
-                group = ch["group"]
-            label = name + (f" ({year})" if year else "")
-            attrs = f'group-title="{group}"'
-            if v.get("img"):
-                attrs += f' tvg-logo="{v["img"]}" poster="{v["img"]}"'
-            d = (series_about(name) if ch["group"] == "Мультфильмы" else "") or clean_desc(v.get("desc", ""))
-            if d:
-                attrs += f' description="{d}"'
-            lines.append(f"#EXTINF:-1 {attrs},{label}")
-            lines.append("https://www.youtube.com/watch?v=" + v["id"])
-            n += 1
-    # маленькие разделы (меньше 10 фильмов) — в «Разное», чтобы список категорий был коротким
-    cnt = {}
-    for l in lines:
-        m = re.match(r'#EXTINF:-1 group-title="([^"]*)"', l)
-        if m:
-            cnt[m.group(1)] = cnt.get(m.group(1), 0) + 1
-    out = []
-    for l in lines:
-        m = re.match(r'#EXTINF:-1 group-title="([^"]*)"', l)
-        if m and ":" in m.group(1) and cnt[m.group(1)] < 10:
-            base = m.group(1).split(":")[0]
-            l = l.replace('group-title="' + m.group(1) + '"', 'group-title="' + base + ': Разное"', 1)
-        out.append(l)
-    lines = out
+            group = ch["group"]
+            if ch.get("genres") in FOREIGN_GENRES:      # «Deutsch · Filme» → «Deutsch · Thriller» и т. д.
+                group = group.split(" · ")[0] + " · " + foreign_genre(ch["genres"], v["title"], v.get("desc", ""))
+            rows.append({"ch": ch, "v": v, "name": name, "year": year, "group": group, "ser": series_of(ch, v["title"], name)})
+    # мультсериалы: серия — в сериал, только если в нём хотя бы 5 серий; одно написание названия на сериал
+    cnt, disp = {}, {}
+    for r in rows:
+        if r["ser"]:
+            key = r["ser"].lower().replace("ё", "е")
+            cnt[key] = cnt.get(key, 0) + 1
+            disp.setdefault(key, {}).setdefault(r["ser"], 0)
+            disp[key][r["ser"]] += 1
+    for r in rows:
+        key = r["ser"].lower().replace("ё", "е")
+        if not r["ser"] or cnt.get(key, 0) < 5:
+            r["ser"] = ""
+            continue
+        r["ser"] = max(disp[key].items(), key=lambda x: x[1])[0]
+        if r["group"] == "Мультфильмы":
+            r["group"] = "Мультсериалы"
+    # маленькие жанры (меньше 8 фильмов) — в «Weitere Filme» / «More Movies»
+    gcnt = {}
+    for r in rows:
+        gcnt[r["group"]] = gcnt.get(r["group"], 0) + 1
+    for r in rows:
+        lang = r["ch"].get("genres")
+        if lang in FOREIGN_OTHER and gcnt[r["group"]] < 8:
+            r["group"] = r["group"].split(" · ")[0] + " · " + FOREIGN_OTHER[lang]
+    lines, n = [], 0
+    for r in rows:
+        v, name, year = r["v"], r["name"], r["year"]
+        label = name + (f" ({year})" if year else "")
+        attrs = f'group-title="{r["group"]}"'
+        if v.get("img"):
+            attrs += f' tvg-logo="{v["img"]}" poster="{v["img"]}"'
+        if r["ser"]:
+            attrs += f' x-series="{r["ser"]}"'
+        d = (series_about(name) if r["ch"]["group"] == "Мультфильмы" else "") or clean_desc(v.get("desc", ""))
+        if d:
+            attrs += f' description="{d}"'
+        lines.append(f"#EXTINF:-1 {attrs},{label}")
+        lines.append("https://www.youtube.com/watch?v=" + v["id"])
+        n += 1
     with open(dst, "w", encoding="utf-8") as f:
         f.write("\n".join(lines) + ("\n" if lines else ""))
     print("свой кинозал (YouTube):", n, "фильмов")
