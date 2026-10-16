@@ -1,0 +1,41 @@
+# Караоке: проверяет ролики (можно ли показывать в приложении в Казахстане и Германии),
+# убирает неподходящие и подбирает замену. Результат — playlists/karaoke.json и отчёт playlists/karaoke_report.txt;
+# karaoke.json также кладётся к релизу latest, откуда его раз в сутки берут телевизоры.
+name: Karaoke
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "43 2 * * 1"   # раз в неделю, в понедельник ночью
+
+permissions:
+  contents: write
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Взять текущий список
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [ ! -s playlists/karaoke.json ]; then
+            gh release download latest -p karaoke.json -O playlists/karaoke.json --repo "$GITHUB_REPOSITORY"
+          fi
+
+      - name: Проверить и подобрать ролики
+        env:
+          YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
+        run: python3 playlists/karaoke_check.py playlists/karaoke.json /tmp/karaoke.json playlists/karaoke_report.txt && cp /tmp/karaoke.json playlists/karaoke.json
+
+      - name: Сохранить и выложить
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git config user.name "newtv-bot"
+          git config user.email "newtv-bot@users.noreply.github.com"
+          git add playlists/karaoke.json playlists/karaoke_report.txt
+          git diff --cached --quiet || (git commit -m "Караоке: проверка роликов" && git pull --rebase && git push)
+          gh release upload latest playlists/karaoke.json --clobber --repo "$GITHUB_REPOSITORY"
