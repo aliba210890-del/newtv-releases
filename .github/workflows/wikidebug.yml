@@ -11,10 +11,11 @@ jobs:
           cd playlists
           python3 - > ../wikidebug.txt 2>&1 <<'PY' || true
           import wiki_plot as w, json, urllib.request, urllib.parse
-          for t,y in [("Шрэк",2001),("История игрушек 5",2026)]:
+          for t,y in [("Шрэк",2001),("История игрушек 5",2026),("Щенячий патруль: Динофильм",2026)]:
               r = w.get(action="query", list="search", srsearch=f"{t} фильм {y}", srlimit=6, srnamespace=0)
               print("SEARCH", t, json.dumps(r, ensure_ascii=False)[:600])
               print("FIND", t, str(w.find(t, y))[:300])
+              ex = w.get(action="query", prop="extracts", exintro=1, explaintext=1, redirects=1, titles=t); pg = ex["query"]["pages"][0]; print("EX", pg["title"], pg.get("extract","")[:700]); print("GOOD", w.good(pg["title"], pg.get("extract",""), t, y), w.is_wrong_kind(pg["title"], pg.get("extract","")))
           try:
               req = urllib.request.Request(w.API + "?action=query&list=search&srsearch=test&format=json", headers={"User-Agent": w.UA})
               print("RAW", urllib.request.urlopen(req, timeout=30).read()[:300])

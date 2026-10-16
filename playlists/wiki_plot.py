@@ -37,7 +37,7 @@ def get(**params):
 
 
 def norm(s):
-    return re.sub(r"[^0-9a-zа-я]+", "", s.lower().replace("ё", "е"))
+    return re.sub(r"[^0-9a-zа-я]+", "", s.lower().replace("ё", "е").replace("э", "е"))
 
 
 def split_title(name):
@@ -89,7 +89,8 @@ def good(page_title, extract, title, year):
         return False
     if is_wrong_kind(page_title, extract):
         return False
-    if year and not any(str(y) in page_title or str(y) in extract[:500] for y in (year, year - 1, year + 1)):
+    exact = norm(re.sub(r"\s*\([^)]*\)\s*$", "", page_title)) == norm(title)   # «Шрек (мультфильм)» ↔ «Шрэк»
+    if year and not exact and not any(str(y) in page_title or str(y) in extract for y in (year, year - 1, year + 1)):
         return False
     return True
 
