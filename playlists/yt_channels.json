@@ -85,14 +85,6 @@
    "foreign": true
   },
   {
-   "name": "Довженко-Центр",
-   "search": "Довженко-Центр фільми",
-   "group": "Кино на украинском (Українською)",
-   "min_minutes": 55,
-   "max": 1000,
-   "foreign": true
-  },
-  {
    "name": "Беларусьфильм2",
    "search": "Беларусьфильм киностудия фильмы",
    "group": "Белорусское кино",
@@ -112,22 +104,6 @@
    "name": "Азербайджанфильм",
    "search": "Azerbaijanfilm Азербайджанфильм",
    "group": "Азербайджанское кино (Azərbaycanca)",
-   "min_minutes": 55,
-   "max": 1000,
-   "foreign": true
-  },
-  {
-   "name": "Polskie filmy",
-   "search": "35mm.online Filmoteka Narodowa",
-   "group": "Польское кино (Polski)",
-   "min_minutes": 55,
-   "max": 1000,
-   "foreign": true
-  },
-  {
-   "name": "Česká filmy",
-   "search": "Národní filmový archiv filmy",
-   "group": "Чешское кино (Čeština)",
    "min_minutes": 55,
    "max": 1000,
    "foreign": true

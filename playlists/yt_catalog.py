@@ -130,6 +130,17 @@ def parse_foreign(title, part=0):
     """Заголовки зарубежных каналов: «Hook | Room for Rent | Thriller | Free Movie», «Mulan - Legende … - Ganzen Film kostenlos …»."""
     parts = [x.strip() for x in title.split("|")]
     t = parts[part] if len(parts) > part else parts[0]
+    ep = None
+    for x in parts[1:]:
+        m = re.match(r"^(\d+)\s*сери[яи]$", x, re.I)
+        if m:
+            ep = m.group(1)
+    if " / " in t:  # «Մոր սիրտը 1957 - Հայկական Ֆիլմ / Mor sirty / Сердце матери» — берём русское название, если есть
+        alts = [re.sub(r"\s*\(\s*на русском[^)]*\)", "", x).strip() for x in t.split(" / ")]
+        cyr = [x for x in alts if re.search("[а-яё]", x, re.I)]
+        t = cyr[-1] if cyr else alts[0]
+    t = re.sub(r"\s*-\s*(?:Հայկական ֆիլմ|haykakan film)\s*$", "", t, flags=re.I)
+    t = re.sub(r"[«»\"]?\s*(?:көркем фильмі|к/ф|х/ф|художественный фильм)\s*", " ", t, flags=re.I)
     t = re.sub(r"\s*\([^)]*(?:ganze[nr]? film|komplett|full movie)[^)]*\)?.*$", "", t, flags=re.I)
     t = FOREIGN_JUNK.sub("", t)
     t = re.sub(r"\s+-\s+(?:spannende[rs]?|packende[rs]?|romantische[rs]?|lustige[rs]?)\s+\w+$", "", t, flags=re.I)
@@ -138,7 +149,14 @@ def parse_foreign(title, part=0):
         t = t.split(":", 1)[1]
     years = re.findall(r"\b(19[2-9]\d|20[0-2]\d)\b", title)
     t = re.sub(r"\s*\((?:19|20)\d\d\)", "", t)
-    return re.sub(r"\s+", " ", t).strip(' "-–—:'), (int(years[0]) if years else None), title.lower()
+    t = re.sub(r"\s*\([^()]*(?:реж|ж\.\)|г\.\))[^()]*\)?\s*$", "", t)  # («Маленький принц…», реж: …, 2019 ж.)
+    t = re.sub(r"\s+(?:19|20)\d\d\s*$", "", t)
+    t = re.sub(r"\s+", " ", t).strip(' "«»-–—:')
+    if t.isupper() and len(t) > 3:
+        t = t[:1] + t[1:].lower()
+    if ep:
+        t += f" — {ep} серия"
+    return t, (int(years[0]) if years else None), title.lower()
 
 
 def parse_title(title):
