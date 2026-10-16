@@ -91,6 +91,68 @@ def find(title, year):
     return None
 
 
+SPARQL = "https://query.wikidata.org/sparql"
+SEARCH_LIMIT = 150  # медленный запасной поиск — не больше стольких фильмов за запуск
+
+
+def http_json(url, data=None):
+    for k in range(3):
+        try:
+            req = urllib.request.Request(url, data=data, headers={"User-Agent": UA, "Accept": "application/json"})
+            with urllib.request.urlopen(req, timeout=60) as r:
+                return json.load(r)
+        except Exception:  # noqa: BLE001
+            time.sleep(3 * (k + 1))
+    return None
+
+
+def variants(title):
+    t = title.strip().strip('"«»')
+    return list({t, t.replace("ё", "е"), re.sub(r'[«»"]', "", t)})
+
+
+def wikidata_pages(pairs):
+    """pairs: [(key, title, year)] → {key: название статьи в русской Википедии} (одним запросом на 25 фильмов)."""
+    vals, back, years = [], {}, {}
+    for key, title, year in pairs:
+        years[key] = year
+        for v in variants(title):
+            vals.append(json.dumps(v, ensure_ascii=False) + "@ru")
+            back.setdefault(v, []).append(key)
+    q = """SELECT ?lbl ?page ?year WHERE {
+  VALUES ?lbl { %s }
+  ?item rdfs:label|skos:altLabel ?lbl .
+  ?art schema:about ?item ; schema:isPartOf <https://ru.wikipedia.org/> ; schema:name ?page .
+  OPTIONAL { ?item wdt:P577 ?d . BIND(YEAR(?d) AS ?year) }
+}""" % " ".join(vals)
+    res = http_json(SPARQL, urllib.parse.urlencode({"query": q, "format": "json"}).encode())
+    if res is None:
+        return None
+    cand = {}
+    for b in res["results"]["bindings"]:
+        for key in back.get(b["lbl"]["value"], []):
+            y = int(b["year"]["value"]) if "year" in b else None
+            want = years[key]
+            ok = (y is not None and want and abs(y - want) <= 1) or (not want)
+            if ok:
+                cand.setdefault(key, set()).add(b["page"]["value"])
+    return cand
+
+
+def extracts(titles):
+    out = {}
+    titles = list(titles)
+    for n in range(0, len(titles), 20):
+        ex = get(action="query", prop="extracts", exintro=1, explaintext=1, exlimit=20, redirects=1, titles="|".join(titles[n:n + 20]))
+        q = (ex or {}).get("query") or {}
+        alias = {r["from"]: r["to"] for r in q.get("redirects", [])}
+        pages = {p["title"]: p.get("extract") or "" for p in q.get("pages", [])}
+        for t in titles[n:n + 20]:
+            out[t] = pages.get(alias.get(t, t), "")
+        time.sleep(0.2)
+    return out
+
+
 def main(src, cache_path):
     try:
         cache = json.load(open(cache_path, encoding="utf-8"))
@@ -111,23 +173,48 @@ def main(src, cache_path):
         if c is None or (c.get("miss") and now - c["miss"] > MISS_RETRY_DAYS * 86400):
             todo[k] = (t, y)
     print("Википедия: фильмов", len(set(names)), "ищу", len(todo))
-    found = fails = 0
-    for i, (k, (t, y)) in enumerate(todo.items()):
-        r = find(t, y)
-        if r is None and get(action="query", meta="siteinfo") is None:
-            fails += 1  # сеть недоступна — не записываем «не найдено»
-            if fails > 20:
-                print("Википедия недоступна — прерываю")
-                break
+    keys = list(todo)
+    found = 0
+    # 1) быстро: Wikidata даёт название статьи сразу для 25 фильмов, текст — по 20 статей за запрос
+    left = []
+    for n in range(0, len(keys), 25):
+        part = [(k, todo[k][0], todo[k][1]) for k in keys[n:n + 25]]
+        cand = wikidata_pages(part)
+        if cand is None:
+            left.extend(k for k, _, _ in part)
             continue
+        titles = {t for ts in cand.values() for t in ts}
+        texts = extracts(titles) if titles else {}
+        for k, t, y in part:
+            best = None
+            for page in sorted(cand.get(k, ())):
+                text = texts.get(page, "")
+                if text and good(page, text, t, y):
+                    best = {"plot": clean(text), "page": page}
+                    break
+            if best:
+                cache[k] = best
+                found += 1
+            else:
+                left.append(k)
+        if n % 250 == 0:
+            print(" …", n + len(part), "найдено", found, flush=True)
+            json.dump(cache, open(cache_path, "w", encoding="utf-8"), ensure_ascii=False, indent=0, sort_keys=True)
+        time.sleep(0.5)
+    # 2) медленный поиск по тексту — только для части оставшихся
+    for i, k in enumerate(left):
+        if i >= SEARCH_LIMIT:
+            break
+        t, y = todo[k]
+        r = find(t, y)
         cache[k] = r if r else {"miss": now}
         found += bool(r)
-        time.sleep(0.05)
-        if i % 200 == 199:
-            json.dump(cache, open(cache_path, "w", encoding="utf-8"), ensure_ascii=False, indent=0, sort_keys=True)
-            print(" …", i + 1, "найдено", found)
+    for k in left[SEARCH_LIMIT:]:
+        cache.setdefault(k, None)
+        if cache[k] is None:
+            del cache[k]  # не искали — попробуем в следующий раз
     json.dump(cache, open(cache_path, "w", encoding="utf-8"), ensure_ascii=False, indent=0, sort_keys=True)
-    print("Википедия: найдено", found, "из", len(todo))
+    print("Википедия: найдено", found, "из", len(todo), flush=True)
 
 
 if __name__ == "__main__":
