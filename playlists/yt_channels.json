@@ -1,0 +1,47 @@
+{
+ "channels": [
+  {
+   "name": "Мосфильм",
+   "handle": "@mosfilm",
+   "search": "Киноконцерн Мосфильм",
+   "group": "Мосфильм",
+   "genres": true,
+   "other": "Разное",
+   "min_minutes": 55
+  },
+  {
+   "name": "Ленфильм",
+   "handle": "@lenfilm",
+   "search": "Ленфильм официальный канал",
+   "group": "Ленфильм",
+   "genres": true,
+   "other": "Разное",
+   "min_minutes": 55
+  },
+  {
+   "name": "Киностудия Горького",
+   "handle": "@gorkyfilmstudio",
+   "search": "Киностудия имени Горького",
+   "group": "Киностудия Горького",
+   "genres": true,
+   "other": "Разное",
+   "min_minutes": 55
+  },
+  {
+   "name": "Беларусьфильм",
+   "handle": "@belarusfilm",
+   "search": "Беларусьфильм",
+   "group": "Беларусьфильм",
+   "genres": true,
+   "other": "Разное",
+   "min_minutes": 55
+  },
+  {
+   "name": "Союзмультфильм",
+   "handle": "@soyuzmultfilm",
+   "search": "Союзмультфильм",
+   "group": "Союзмультфильм",
+   "min_minutes": 4
+  }
+ ]
+}

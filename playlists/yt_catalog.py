@@ -1,0 +1,210 @@
+"""Свой законный кинозал New TV: полные фильмы с официальных YouTube-каналов правообладателей.
+
+Использование: python yt_catalog.py <каналы.json> <выход.m3u> <кэш.json>
+Ключ — переменная окружения YOUTUBE_API_KEY (секрет репозитория). Без ключа выдаёт прежний список из кэша.
+
+Фильмы показываются в приложении через официальный плеер YouTube (законно, реклама YouTube сохраняется).
+Список каналов — в каналы.json: {"channels": [{"name": "...", "handle": "@...", "group": "...", "min_minutes": 55}]}.
+Каталог обновляется не чаще раза в сутки, чтобы не тратить дневной лимит YouTube.
+"""
+import json
+import os
+import re
+import sys
+import time
+import urllib.parse
+import urllib.request
+
+API = "https://www.googleapis.com/youtube/v3/"
+REFRESH_HOURS = 20
+SKIP_WORDS = ("трейлер", "trailer", "тизер", "фрагмент", "#shorts", "отрывок", "анонс", "backstage", "за кадром", "интервью")
+REGION = "DE"  # главная аудитория — Германия и Европа: пропускаем видео, закрытые там
+
+GENRES = [("Комедии", ("комедия", "комедийный")), ("Военные", ("военный", "война", "военная драма")),
+          ("Детективы", ("детектив", "криминал")), ("Приключения", ("приключения", "приключенческий")),
+          ("Сказки", ("сказка", "фэнтези")), ("Мелодрамы", ("мелодрама",)), ("Фантастика", ("фантастика", "фантастический")),
+          ("Исторические", ("исторический", "историческая")), ("Музыкальные", ("музыкальный", "мюзикл")),
+          ("Драмы", ("драма",)), ("Семейные", ("семейный", "детский"))]
+
+
+def api(path, **params):
+    params["key"] = os.environ["YOUTUBE_API_KEY"]
+    url = API + path + "?" + urllib.parse.urlencode(params)
+    for k in range(3):
+        try:
+            with urllib.request.urlopen(urllib.request.Request(url, headers={"User-Agent": "newtv-playlist-bot"}), timeout=30) as r:
+                return json.load(r)
+        except urllib.error.HTTPError as e:
+            body = e.read().decode("utf-8", "replace")[:300]
+            if e.code in (400, 403):
+                raise SystemExit(f"YouTube API {e.code}: {body}")
+            time.sleep(3 * (k + 1))
+        except Exception:  # noqa: BLE001
+            time.sleep(3 * (k + 1))
+    return None
+
+
+def iso_minutes(d):
+    m = re.match(r"P(?:(\d+)D)?T?(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?", d or "")
+    if not m:
+        return 0
+    dd, h, mi, s = (int(x or 0) for x in m.groups())
+    return dd * 1440 + h * 60 + mi + s / 60
+
+
+def channel_id(ch, cache):
+    key = "id:" + (ch.get("handle") or ch["name"])
+    if cache.get(key):
+        return cache[key]
+    cid = None
+    if ch.get("id"):
+        cid = ch["id"]
+    elif ch.get("handle"):
+        r = api("channels", part="id,snippet", forHandle=ch["handle"])
+        items = (r or {}).get("items") or []
+        if items:
+            cid = items[0]["id"]
+            print("канал", ch["handle"], "→", items[0]["snippet"]["title"], cid)
+    if not cid and ch.get("search"):
+        r = api("search", part="snippet", type="channel", q=ch["search"], maxResults=3)
+        for it in (r or {}).get("items") or []:
+            print("поиск канала", repr(ch["search"]), "→", it["snippet"]["title"], it["snippet"]["channelId"])
+        items = (r or {}).get("items") or []
+        if items:
+            cid = items[0]["snippet"]["channelId"]
+    if cid:
+        cache[key] = cid
+    else:
+        print("::warning::канал не найден:", ch.get("handle") or ch["name"])
+    return cid
+
+
+def fetch_channel(cid, min_minutes):
+    r = api("channels", part="contentDetails", id=cid)
+    items = (r or {}).get("items") or []
+    if not items:
+        return []
+    uploads = items[0]["contentDetails"]["relatedPlaylists"]["uploads"]
+    ids, token = [], None
+    while True:
+        p = {"part": "contentDetails", "playlistId": uploads, "maxResults": 50}
+        if token:
+            p["pageToken"] = token
+        r = api("playlistItems", **p)
+        if not r:
+            break
+        ids += [it["contentDetails"]["videoId"] for it in r.get("items", [])]
+        token = r.get("nextPageToken")
+        if not token or len(ids) >= 5000:
+            break
+    out = []
+    for n in range(0, len(ids), 50):
+        r = api("videos", part="snippet,contentDetails,status", id=",".join(ids[n:n + 50]))
+        for v in (r or {}).get("items", []):
+            sn, cd, st = v["snippet"], v["contentDetails"], v.get("status", {})
+            if not st.get("embeddable", True) or st.get("privacyStatus") != "public":
+                continue
+            rr = cd.get("regionRestriction") or {}
+            if REGION in rr.get("blocked", []) or ("allowed" in rr and REGION not in rr["allowed"]):
+                continue
+            if iso_minutes(cd.get("duration")) < min_minutes:
+                continue
+            title = sn.get("title", "")
+            if any(w in title.lower() for w in SKIP_WORDS):
+                continue
+            th = sn.get("thumbnails", {})
+            img = (th.get("maxres") or th.get("standard") or th.get("high") or th.get("medium") or {}).get("url", "")
+            out.append({"id": v["id"], "title": title, "desc": sn.get("description", ""), "img": img})
+    return out
+
+
+def parse_title(title):
+    """«Иван Васильевич меняет профессию (FullHD, комедия, реж. Леонид Гайдай, 1973 г.)» → название, год, примечания."""
+    t = re.sub(r"\s*[|│].*$", "", title).strip()
+    years = re.findall(r"\b(19[2-9]\d|20[0-2]\d)\b", t)
+    year = int(years[-1]) if years else None
+    m = re.match(r"^(.*?)\s*[\(\[](.*)[\)\]]\s*$", t)
+    name, extra = (m.group(1), m.group(2)) if m else (t, "")
+    name = re.sub(r"\s*(?:\d+\s*серия|серия\s*\d+)$", "", name, flags=re.I).strip(' "«»-—')
+    name = re.sub(r"\s*\((?:4K|FullHD|HD)\)\s*", " ", name).strip()
+    return name or t, year, (extra + " " + title).lower()
+
+
+def clean_desc(d):
+    d = re.sub(r"https?://\S+", "", d)
+    d = re.sub(r"#\S+", "", d)
+    keep = []
+    for line in d.splitlines():
+        line = line.strip()
+        if not line or re.search(r"подпис|subscribe|смотрите также|плейлист|канал|instagram|vk\.com|telegram|©", line, re.I):
+            continue
+        keep.append(line)
+    t = re.sub(r"\s+", " ", " ".join(keep)).strip()
+    if len(t) > 650:
+        cut = t[:650]
+        end = max(cut.rfind(". "), cut.rfind("! "), cut.rfind("? "))
+        t = cut[:end + 1] if end > 200 else cut.rsplit(" ", 1)[0] + "…"
+    return t.replace('"', "“")
+
+
+def genre_of(text):
+    for g, words in GENRES:
+        if any(w in text for w in words):
+            return g
+    return None
+
+
+def main(cfg_path, dst, cache_path):
+    cfg = json.load(open(cfg_path, encoding="utf-8"))
+    try:
+        cache = json.load(open(cache_path, encoding="utf-8"))
+    except (OSError, ValueError):
+        cache = {}
+    fresh = time.time() - cache.get("updated", 0) < REFRESH_HOURS * 3600
+    if os.environ.get("YOUTUBE_API_KEY") and not fresh:
+        videos = {}
+        for ch in cfg["channels"]:
+            cid = channel_id(ch, cache)
+            if not cid:
+                continue
+            vids = fetch_channel(cid, ch.get("min_minutes", 55))
+            print(ch.get("handle") or ch["name"], "— фильмов:", len(vids))
+            videos[cid] = vids
+        if sum(len(v) for v in videos.values()):
+            cache["videos"] = videos
+            cache["updated"] = int(time.time())
+        json.dump(cache, open(cache_path, "w", encoding="utf-8"), ensure_ascii=False, indent=0, sort_keys=True)
+    elif not os.environ.get("YOUTUBE_API_KEY"):
+        print("YOUTUBE_API_KEY не задан — беру список из кэша")
+
+    lines, seen, n = [], set(), 0
+    for ch in cfg["channels"]:
+        cid = cache.get("id:" + (ch.get("handle") or ch["name"]))
+        for v in (cache.get("videos") or {}).get(cid, []):
+            name, year, text = parse_title(v["title"])
+            k = (name.lower(), year)
+            if k in seen:
+                continue
+            seen.add(k)
+            if ch.get("genres"):
+                g = genre_of(text) or ch.get("other", "Другое")
+                group = ch["group"] + ": " + g
+            else:
+                group = ch["group"]
+            label = name + (f" ({year})" if year else "")
+            attrs = f'group-title="{group}"'
+            if v.get("img"):
+                attrs += f' tvg-logo="{v["img"]}" poster="{v["img"]}"'
+            d = clean_desc(v.get("desc", ""))
+            if d:
+                attrs += f' description="{d}"'
+            lines.append(f"#EXTINF:-1 {attrs},{label}")
+            lines.append("https://www.youtube.com/watch?v=" + v["id"])
+            n += 1
+    with open(dst, "w", encoding="utf-8") as f:
+        f.write("\n".join(lines) + ("\n" if lines else ""))
+    print("свой кинозал (YouTube):", n, "фильмов")
+
+
+if __name__ == "__main__":
+    main(*sys.argv[1:4])

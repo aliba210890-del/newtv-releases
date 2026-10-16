@@ -31,6 +31,12 @@ jobs:
           python3 playlists/categorize.py /tmp/films_clean.m3u /tmp/out/films.m3u playlists/film_genres.json playlists/film_wiki.json
           python3 playlists/clean_playlist.py /tmp/tv.m3u /tmp/out/tv.m3u
 
+      # Свой законный кинозал: полные фильмы с официальных YouTube-каналов правообладателей (секрет YOUTUBE_API_KEY)
+      - name: Свой кинозал (YouTube)
+        run: |
+          YOUTUBE_API_KEY="${{ secrets.YOUTUBE_API_KEY }}" python3 playlists/yt_catalog.py playlists/yt_channels.json /tmp/out/classic.m3u playlists/yt_cache.json || echo "::warning::YouTube недоступен — без своего кинозала в этот раз"
+          [ -s /tmp/out/classic.m3u ] && cat /tmp/out/classic.m3u >> /tmp/out/films.m3u || true
+
       # Шифруем для сервера New TV (открытые .m3u в репозиторий не попадают)
       - name: Зашифровать для сервера
         run: |
@@ -45,4 +51,5 @@ jobs:
           git config user.email "newtv-bot@users.noreply.github.com"
           git add playlists/film_genres.json playlists/*.enc
           git add playlists/film_wiki.json 2>/dev/null || true
+          git add playlists/yt_cache.json 2>/dev/null || true
           git diff --cached --quiet || (git commit -m "Обновить плейлисты" && git pull --rebase && git push)
