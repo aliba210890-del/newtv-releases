@@ -135,6 +135,7 @@ def parse_foreign(title, part=0):
     if ":" in t and re.search(r"wahnsinn|klassiker|so (?:gut|spannend)|muss man|unglaublich", t.split(":")[0], re.I):
         t = t.split(":", 1)[1]
     years = re.findall(r"\b(19[2-9]\d|20[0-2]\d)\b", title)
+    t = re.sub(r"\s*\((?:19|20)\d\d\)", "", t)
     return re.sub(r"\s+", " ", t).strip(' "-–—:'), (int(years[0]) if years else None), title.lower()
 
 
