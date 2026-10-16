@@ -27,7 +27,10 @@ def get(**params):
         try:
             req = urllib.request.Request(url, headers={"User-Agent": UA})
             with urllib.request.urlopen(req, timeout=30) as r:
-                return json.load(r)
+                data = json.load(r)
+            if isinstance(data, dict) and data.get("error"):   # «ratelimited» и т. п. — это не «статьи нет»
+                raise ValueError(data["error"].get("code"))
+            return data
         except Exception:  # noqa: BLE001 — сеть: повторяем, потом сдаёмся
             time.sleep(4 * (k + 1))   # Википедия ограничивает частые запросы — ждём дольше
     return None
@@ -227,8 +230,10 @@ def main(src, cache_path):
             json.dump(cache, open(cache_path, "w", encoding="utf-8"), ensure_ascii=False, indent=0, sort_keys=True)
         time.sleep(0.5)
     # 2) медленный поиск по тексту — только для части оставшихся
+    t_end = time.time() + 8 * 60      # не дольше 8 минут за запуск — остальное в следующий раз
     for i, k in enumerate(left):
-        if i >= SEARCH_LIMIT:
+        if i >= SEARCH_LIMIT or time.time() > t_end:
+            left = left[:i] + [x for x in left[i:] if cache.get(x) is None]
             break
         t, y = todo[k]
         r = find(t, y)
@@ -237,7 +242,7 @@ def main(src, cache_path):
             continue
         cache[k] = r if r else {"miss": now}
         found += bool(r)
-    for k in left[SEARCH_LIMIT:]:
+    for k in left:
         cache.setdefault(k, None)
         if cache[k] is None:
             del cache[k]  # не искали — попробуем в следующий раз
