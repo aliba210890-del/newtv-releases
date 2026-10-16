@@ -259,7 +259,7 @@ def main(cfg_path, dst, cache_path):
             seen.add(k)
             if ch.get("genres"):
                 g = genre_of(text)
-                group = ch["group"] + ": " + g if g else ch["group"]
+                group = ch["group"] + ": " + (g or "Разное")
             elif top:
                 sname = name.split(" — ")[0]
                 group = ch["group"] + ": " + (disp[sname.lower()] if sname.lower() in top else "Разное")
