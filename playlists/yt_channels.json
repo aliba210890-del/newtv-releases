@@ -19,7 +19,8 @@
    "handle": "@gorkyfilmstudio",
    "search": "Киностудия имени Горького",
    "group": "Советское кино",
-   "min_minutes": 55
+   "min_minutes": 55,
+   "title_rule": "gorky"
   },
   {
    "name": "Союзмультфильм",
@@ -179,7 +180,8 @@
    "group": "Українська · Кіно",
    "min_minutes": 55,
    "max": 1500,
-   "foreign": true
+   "foreign": true,
+   "title_rule": "quote"
   },
   {
    "name": "Studio Filmów Rysunkowych",
@@ -188,7 +190,7 @@
    "min_minutes": 5,
    "max": 1000,
    "foreign": true,
-   "exclude": "rozmowa|jak powstaj|wywiad|zwiastun|making of|kulisy"
+   "exclude": "rozmowa|jak powstaj|wywiad|zwiastun|making of|kulisy|75 lat"
   },
   {
    "name": "Peppa Pig Polski",
@@ -209,14 +211,6 @@
    "foreign": true,
    "exclude": "live",
    "series": "Peppa Wutz"
-  },
-  {
-   "name": "Swell Film Production",
-   "id": "UCgN_VU99ugR-LCGYXWRvGGg",
-   "group": "Қазақша · Қазақ киносы",
-   "min_minutes": 55,
-   "max": 1000,
-   "foreign": true
   }
  ]
 }

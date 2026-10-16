@@ -210,6 +210,9 @@ def parse_title(title):
     «Иван Васильевич меняет профессию (FullHD, комедия, реж. Леонид Гайдай, 1973 г.)»,
     «Тихий дон 2 серия (1957) Драма», «Ну, погоди! Каникулы 🐺 Субботник 🐰 Премьера на канале Союзмультфильм HD»."""
     low = title.lower()
+    mm = re.match(r"^(.+?)\s*\((19[2-9]\d|20[0-2]\d)\)\s*[—–-]", title)        # Мосфильм: «Земля Санникова (1973) — Мкртчян, Попов | …»
+    if mm and not EMOJI.search(title):
+        return mm.group(1).strip(' "«»'), int(mm.group(2)), low
     years = re.findall(r"\b(19[2-9]\d|20[0-2]\d)\b", title)
     year = int(years[-1]) if years else None
     t = title
@@ -304,6 +307,86 @@ FOREIGN_GENRES = {   # жанр по названию (а если там нет
 FOREIGN_OTHER = {"de": "Weitere Filme", "en": "More Movies"}
 
 
+CLICK = re.compile(r"^(все серии|русские детективы|детективный сериал|сериал|детектив|экранизация|новинка.*|премьера.*|фильм|"
+                   r"мелодрама|триллер|драма|комедия|боевик|full movie|ganzer film.*|film|filme? auf deutsch.*|сборник|мегасборник|"
+                   r"лучшие серии|лучшие сериалы|русские сериалы|все серии сразу|все серии подряд|смотреть онлайн|hd|4k|4к|full ?hd|золотая коллекция.*|"
+                   r"(?:\w+ая\s+)?(?:детектив|сериал|мелодрама|драма|комедия|триллер|боевик|экранизация)|"
+                   r"(?:детектив|сериал|мелодрама|драма|комедия|триллер|боевик|экранизация)(?:\s*,\s*(?:детектив|сериал|мелодрама|драма|комедия|триллер|боевик|экранизация))+)$", re.I)
+
+
+TAILS = [r"\s*[—–-]\s*союз\w*(?:\s*\d{4})?(?:\s*hd)?\s*$", r"\s*[—–-]?\s*\b(?:все серии (?:подряд|сразу)|сборник)\s*$",
+         r"\s*[—–-]\s*золотая коллекция.*$", r"\s+художественный фильм.*$", r"\.?\s*\b(?:лучшие (?:сериалы|фильмы)|русские сериалы)\b\.?",
+         r"\s*:\s+[^:]*\bфильм[^:]*$", r"\s*[—–-]\s*(?:детектив для детей|сказк\w* (?:для детей|сутеева)|познавательн\w*|поучительн\w*)\s*$",
+         r"\s+все серии\s*$", r"\.?\s*лучшие серии\b.*$", r"\s*[—–-]\s*(?:добрый|весёлый|веселый|новый|лучший)\s*$", r"\s*—\s*(?:\w+ая\s+)?(?:комедия|драма|мелодрама|фильм)\b.*$", r"\s+(?:19|20)\d\d\s*,.*$"]
+JUNK_ONLY = re.compile(r"^(союз\w*|сборник|мультфильм|фильм|золотая коллекция.*|познавательн\w*|поучительн\w*|сказк[аи] для детей|"
+                       r"детектив для детей|все серии|(?:full|free)\b.*)$", re.I)
+
+
+def shouting(x):
+    letters = [c for c in x if c.isalpha()]
+    return len(letters) >= 4 and sum(c.isupper() for c in letters) / len(letters) > 0.7
+
+
+def calm(x, lang="ru"):
+    """КАПС → обычный регистр: по-русски с заглавной только начало, по-немецки/английски — каждое слово."""
+    if not shouting(x):
+        return x
+    if lang == "ru":
+        x = x.lower()
+        return x[:1].upper() + x[1:]
+    small = {"in", "im", "der", "die", "das", "und", "von", "zu", "mit", "the", "of", "and", "a", "an", "to", "for", "on", "at", "ein", "eine"}
+    w = x.lower().split(" ")
+    return " ".join(t if (i and t in small) else t[:1].upper() + t[1:] for i, t in enumerate(w))
+
+
+def tidy(name, desc="", lang="ru"):
+    """Аккуратное название: без рекламных криков, КАПСА, хвостов «— 4K», «I Фиксики», «- Союзмультфильм 2015»."""
+    t = name
+    ep = re.search(r"\s+—\s+\d+\s+серия$", t)                          # « — 8 серия» добавлен разбором — вернём в конце
+    if ep:
+        t = t[:ep.start()]
+    m = re.search(r"„([^“”]{2,80})[“”]", desc or "")                 # Moviedome: «Den Spielfilm „Karakter“…» — настоящее название
+    if m and lang != "ru" and (shouting(t) or len(t) > 45):
+        t = m.group(1)
+    t = re.sub(r"\s*[=:;]-?[)(D]+", " ", t)                          # смайлики
+    m = re.match(r"^([^:]{4,60}):\s*(.{3,})$", t)                     # «СБОРНИК ЛУЧШИХ ДЕТЕКТИВОВ №3: Сразу после…»
+    if m and shouting(m.group(1)) and not shouting(m.group(2)):
+        t = m.group(2)
+    t = re.sub(r"\s*\([^)]*$", "", t)                                  # оборванная скобка в конце
+    t = EMOJI.sub(" ", t)
+    for _ in range(3):                                                 # хвосты снимаем по очереди, пока есть
+        for rx in TAILS:
+            t = re.sub(rx, "", t, flags=re.I).strip()
+    t = re.sub(r"\s+[-–—]\s+mit\s+.*$", "", t, flags=re.I)              # «Left Behind - mit Nicolas Cage»
+    t = re.sub(r"\s*[—–-]\s*золотая коллекция.*$", "", t, flags=re.I)
+    t = re.sub(r"\s*\((?=[^)]*(?:\bmit\b|filme?\b|deutsch|thriller|komödie|drama|horror|action|ganzer|sci.?fi|fantasy|krimi|western|abenteuer|liebes))[^)]*\)?", "", t, flags=re.I)
+    m = re.match(r"^([A-ZÄÖÜ][A-ZÄÖÜ .&'’-]+?)s?\s+(?:in|ist)\s+(.+)$", t)   # «BRADLEY COOPER in AMERICAN EVIL»
+    if m and shouting(m.group(1)) and lang != "ru":
+        t = m.group(2)
+    t = re.sub(r"\s+[I|]\s+(Фиксики|Смешарики)\s*$", "", t)
+    t = re.sub(r"\s*[—–-]\s*(4K|4К|HD|Full ?HD)\b", "", t, flags=re.I)
+    t = re.sub(r"\s+-\s+[^-]*(?:мультфильм|союзмультфильм)[^-]*", "", t, flags=re.I)
+    segs = [x.strip(" .,:;-–") for x in re.split(r"!+|\.\s+", t)]
+    segs = [x for x in segs if x and not re.match(r"^\d+$", x)]
+    if len(segs) > 1:
+        good = [x for x in segs if not shouting(x) and not CLICK.match(x)]
+        if not good:
+            good = [max((x for x in segs if not CLICK.match(x)), key=len, default=segs[0])]
+        out = good[0]
+        for x in good[1:]:
+            out += (" — " if re.match(r"^\d+(?:\s*-\s*\d+)?\s*-?\s*(сери|бөлім|odc)", x, re.I) else ". ") + x
+        t = out
+    t = calm(t.strip(" .,:;-–—!"), lang)
+    if lang == "ru":                                                   # отдельные слова КАПСОМ: «Новое ПРОСТОКВАШИНО»
+        t = re.sub(r"\b([А-ЯЁ])([А-ЯЁ]{3,})\b", lambda mm: mm.group(1) + mm.group(2).lower(), t)
+    t = re.sub(r"\s+", " ", t).strip(" -–—")
+    if t.count('"') == 1:
+        t = t.replace('"', "")
+    if JUNK_ONLY.match(t):
+        return ""
+    return t + (ep.group(0) if ep and t else "")
+
+
 def foreign_genre(lang, title, desc):
     for text in (title.lower(), desc.lower()[:300]):
         for g, rx in FOREIGN_GENRES[lang]:
@@ -381,6 +464,34 @@ def main(cfg_path, dst, cache_path):
             if (inc and not re.search(inc, v["title"], re.I)) or (exc and re.search(exc, v["title"], re.I)):
                 continue  # фильтр применяется и к уже сохранённому списку
             name, year, text = parse_foreign(v["title"], ch.get("title_part", 0)) if ch.get("foreign") else parse_title(v["title"])
+            if ch.get("title_rule") == "gorky" and not year:           # «Советский детектив, который… — Цена одного выстрела»
+                mq = re.search(r"«([^»]{2,80})»", v["title"])
+                if mq:
+                    name = mq.group(1).strip()
+                elif " — " in v["title"]:
+                    name = v["title"].split(" — ", 1)[1].split("|")[0].strip()
+                else:
+                    continue                                         # без настоящего названия — не берём
+            if ch.get("title_rule") == "quote":                        # «Весна на Заречной улице» мелодрама (1956)
+                mq = re.search(r"«([^»]{2,80})»", v["title"])
+                mb = re.match(r"^([^(«»]{2,80}?)\s*\((?:19|20)\d\d", v["title"])
+                if mq:
+                    name = mq.group(1).strip()
+                elif mb:
+                    name = mb.group(1).strip()
+            sr = ch.get("series")
+            if sr and sr not in ("emoji", "kz"):                      # «Фиксики - Дедус…», «Играем с Фиксиками I Фиксики»
+                rest = re.sub(r"^" + re.escape(sr) + r"\b[\s.:,!|I—–-]*", "", name, flags=re.I).strip()
+                name = sr + " — " + (rest or name) if rest.lower() != sr.lower() else sr
+            lang = {"de": "de", "en": "en"}.get(ch.get("genres"), "de" if ch["group"].startswith("Deutsch") else "ru")
+            if " — " in name and ch.get("series"):
+                a, b2 = name.split(" — ", 1)
+                b2 = tidy(b2, "", lang)
+                name = a + " — " + b2 if b2 else a
+            else:
+                name = tidy(name, v.get("desc", ""), lang)
+            if not name:
+                continue
             k = (name.lower(), year)
             if k in seen:
                 continue
@@ -397,6 +508,17 @@ def main(cfg_path, dst, cache_path):
             cnt[key] = cnt.get(key, 0) + 1
             disp.setdefault(key, {}).setdefault(r["ser"], 0)
             disp[key][r["ser"]] += 1
+    known = sorted({k for k, c in cnt.items() if c >= 5}, key=len, reverse=True)
+    for r in rows:                                    # «Новое Простоквашино - Геймер» тоже серия «Новое Простоквашино»
+        if r["ch"].get("series") and (not r["ser"] or cnt.get(r["ser"].lower().replace("ё", "е"), 0) < 5):
+            low = r["name"].lower().replace("ё", "е")
+            for k in known:
+                if low.startswith(k) and (len(low) == len(k) or not low[len(k)].isalpha()):
+                    r["ser"] = k
+                    rest = r["name"][len(k):].strip(" .:,-–—")
+                    rest = re.sub(r"^сборник\b\s*[-–—]?\s*", "", rest, flags=re.I)
+                    r["name"] = max(disp[k].items(), key=lambda x: x[1])[0] + (" — " + rest if rest else "")
+                    break
     for r in rows:
         key = r["ser"].lower().replace("ё", "е")
         if not r["ser"] or cnt.get(key, 0) < 5:
