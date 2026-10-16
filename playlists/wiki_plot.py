@@ -59,6 +59,22 @@ def clean(text):
     return t
 
 
+BAD_PAGE = ("франшиз", "игра)", "(саундтрек", "(роман", "(повесть", "(песня", "(альбом", "(сериал", "(телесериал", "(мультсериал", "(персонаж", "(комикс")
+BAD_START = ("компьютерная игра", "видеоигра", "франшиза", "медиафраншиза", "серия фильмов", "серия компьютерных игр", "саундтрек",
+             "роман ", "повесть", "телесериал", "мультсериал", "песня", "альбом", "персонаж", "комикс")
+
+
+def is_wrong_kind(page_title, extract):
+    """Статья не о самом фильме: игра, франшиза, книга, сериал и т. п."""
+    pt = page_title.lower()
+    if any(b in pt for b in BAD_PAGE):
+        return True
+    head = re.sub(r"«[^»]*»|\([^)]*\)", "", extract.lower())[:220]
+    first = head.split("—", 1)[1] if "—" in head else head
+    first = first.strip()[:120]
+    return any(first.startswith(b) or (" " + b) in first[:60] for b in BAD_START)
+
+
 def good(page_title, extract, title, year):
     """Это действительно статья о нужном фильме?"""
     pt, ex = page_title.lower(), extract.lower()
@@ -67,6 +83,8 @@ def good(page_title, extract, title, year):
     if not any(w in pt or w in ex[:400] for w in FILM_WORDS):
         return False
     if "значения" in pt:  # страница-неоднозначность
+        return False
+    if is_wrong_kind(page_title, extract):
         return False
     if year and not any(str(y) in page_title or str(y) in extract[:500] for y in (year, year - 1, year + 1)):
         return False

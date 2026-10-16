@@ -118,16 +118,36 @@ def fetch_channel(cid, min_minutes):
     return out
 
 
+EMOJI = re.compile("[\U0001F000-\U0001FFFF☀-➿⬀-⯿️‍]+")
+
+
 def parse_title(title):
-    """«Иван Васильевич меняет профессию (FullHD, комедия, реж. Леонид Гайдай, 1973 г.)» → название, год, примечания."""
-    t = re.sub(r"\s*[|│].*$", "", title).strip()
-    years = re.findall(r"\b(19[2-9]\d|20[0-2]\d)\b", t)
+    """Название, год и текст для поиска жанра из заголовка видео. Номер серии остаётся в названии.
+    «Иван Васильевич меняет профессию (FullHD, комедия, реж. Леонид Гайдай, 1973 г.)»,
+    «Тихий дон 2 серия (1957) Драма», «Ну, погоди! Каникулы 🐺 Субботник 🐰 Премьера на канале Союзмультфильм HD»."""
+    low = title.lower()
+    years = re.findall(r"\b(19[2-9]\d|20[0-2]\d)\b", title)
     year = int(years[-1]) if years else None
-    m = re.match(r"^(.*?)\s*[\(\[](.*)[\)\]]\s*$", t)
-    name, extra = (m.group(1), m.group(2)) if m else (t, "")
-    name = re.sub(r"\s*(?:\d+\s*серия|серия\s*\d+)$", "", name, flags=re.I).strip(' "«»-—')
-    name = re.sub(r"\s*\((?:4K|FullHD|HD)\)\s*", " ", name).strip()
-    return name or t, year, (extra + " " + title).lower()
+    t = title
+    if EMOJI.search(t):  # мультфильмы Союзмультфильма: «Серия 🐺 Эпизод ⭐ …»
+        parts = [x.strip(" -—|.,") for x in EMOJI.split(t)]
+        parts = [re.sub(r"\s*(смотреть онлайн|онлайн|мультик|мультфильм)\b.*$", "", x, flags=re.I).strip(" -—") for x in parts]
+        parts = [x for x in parts if x and not re.search(r"премьер|союзмультфильм|мультфильм для|мультики|\bhd\b|сборник|^\d{4}$", x, re.I)]
+        t = " — ".join(parts[:2]) if parts else t
+    t = re.sub(r"\s*[|│/].*$", "", t).strip()
+    if "—" in t and re.search(r"советск|фильм|детектив|комеди|драм|мелодрам|боевик|который|которая", t.split("—")[0], re.I) and not EMOJI.search(title):
+        t = t.split("—", 1)[1].strip()
+    t = re.sub(r"\s*[\(\[][^\)\]]*[\)\]]\s*", " ", t)  # (FullHD, комедия, реж. …, 1973 г.) / (1957)
+    t = re.sub(r"\s+(драма|комедия|мелодрама|детектив|сказка|боевик|приключения)\s*$", "", t, flags=re.I)
+    t = re.sub(r"\b(премьера|full ?hd|4k|4к|hd)\b", "", t, flags=re.I)
+    m = re.search(r"(\d+)\s*-?\s*я?\s*сери[яи]|сери[яи]\s*(\d+)", t, re.I)
+    ep = (m.group(1) or m.group(2)) if m else None
+    if m:
+        t = (t[:m.start()] + t[m.end():])
+    name = re.sub(r"\s+", " ", t).strip(' "«»-—,.')
+    if ep:
+        name += f" — {ep} серия"
+    return name or title.strip(), year, low
 
 
 def clean_desc(d):
@@ -136,7 +156,7 @@ def clean_desc(d):
     keep = []
     for line in d.splitlines():
         line = line.strip()
-        if not line or re.search(r"подпис|subscribe|смотрите также|плейлист|канал|instagram|vk\.com|telegram|©", line, re.I):
+        if not line or re.search(r"подпис|subscribe|смотрите так ?же|плейлист|канал|instagram|vk\.com|vkontakte|telegram|телеграм|tiktok|одноклассники|яндекс|дзен|социальных сет|сайт |©|^[✔✅▶►•]", line, re.I):
             continue
         keep.append(line)
     t = re.sub(r"\s+", " ", " ".join(keep)).strip()
@@ -180,15 +200,28 @@ def main(cfg_path, dst, cache_path):
     lines, seen, n = [], set(), 0
     for ch in cfg["channels"]:
         cid = cache.get("id:" + (ch.get("handle") or ch["name"]))
-        for v in (cache.get("videos") or {}).get(cid, []):
+        vids = (cache.get("videos") or {}).get(cid, [])
+        top = set()
+        if ch.get("series_groups"):  # мультсериалы: самые большие — отдельными разделами
+            cnt, disp = {}, {}
+            for v in vids:
+                orig = parse_title(v["title"])[0].split(" — ")[0]
+                sname = orig.lower()
+                cnt[sname] = cnt.get(sname, 0) + 1
+                disp.setdefault(sname, orig)
+            top = {k for k, c in sorted(cnt.items(), key=lambda x: -x[1])[:ch["series_groups"]] if c >= 5}
+        for v in vids:
             name, year, text = parse_title(v["title"])
             k = (name.lower(), year)
             if k in seen:
                 continue
             seen.add(k)
             if ch.get("genres"):
-                g = genre_of(text) or ch.get("other", "Другое")
-                group = ch["group"] + ": " + g
+                g = genre_of(text)
+                group = ch["group"] + ": " + g if g else ch["group"]
+            elif top:
+                sname = name.split(" — ")[0]
+                group = ch["group"] + ": " + (disp[sname.lower()] if sname.lower() in top else "Разное")
             else:
                 group = ch["group"]
             label = name + (f" ({year})" if year else "")
@@ -201,6 +234,20 @@ def main(cfg_path, dst, cache_path):
             lines.append(f"#EXTINF:-1 {attrs},{label}")
             lines.append("https://www.youtube.com/watch?v=" + v["id"])
             n += 1
+    # маленькие разделы (меньше 10 фильмов) — в «Разное», чтобы список категорий был коротким
+    cnt = {}
+    for l in lines:
+        m = re.match(r'#EXTINF:-1 group-title="([^"]*)"', l)
+        if m:
+            cnt[m.group(1)] = cnt.get(m.group(1), 0) + 1
+    out = []
+    for l in lines:
+        m = re.match(r'#EXTINF:-1 group-title="([^"]*)"', l)
+        if m and (cnt[m.group(1)] < 10 or ":" not in m.group(1)):
+            base = m.group(1).split(":")[0]
+            l = l.replace('group-title="' + m.group(1) + '"', 'group-title="' + base + ': Разное"', 1)
+        out.append(l)
+    lines = out
     with open(dst, "w", encoding="utf-8") as f:
         f.write("\n".join(lines) + ("\n" if lines else ""))
     print("свой кинозал (YouTube):", n, "фильмов")
