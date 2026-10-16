@@ -19,6 +19,47 @@ API = "https://www.googleapis.com/youtube/v3/"
 REFRESH_HOURS = 20
 SKIP_WORDS = ("трейлер", "trailer", "тизер", "фрагмент", "#shorts", "отрывок", "анонс", "backstage", "за кадром", "интервью")
 REGION = "DE"  # главная аудитория — Германия и Европа: пропускаем видео, закрытые там
+OUR = ("KZ", "DE", "RU", "AT", "CH", "PL", "CZ", "UA", "BY", "AM", "AZ")   # страны абонентов New TV
+MAIN = ("KZ", "DE")   # закрыто сразу в обеих главных странах — не берём совсем
+
+
+def blocked_in(rr):
+    """Страны абонентов, где YouTube не покажет ролик (по contentDetails.regionRestriction)."""
+    rr = rr or {}
+    if "allowed" in rr:
+        return [c for c in OUR if c not in rr["allowed"]]
+    return [c for c in OUR if c in rr.get("blocked", [])]
+
+
+def recheck(videos):
+    """Перепроверить уже сохранённые ролики: удалённые/скрытые убрать, у остальных обновить страны, где они закрыты.
+    50 роликов за запрос (1 единица лимита), поэтому дёшево делать при каждом обновлении."""
+    ids = [v["id"] for vs in videos.values() for v in vs]
+    info, ok = {}, True
+    for n in range(0, len(ids), 50):
+        r = api("videos", part="contentDetails,status", id=",".join(ids[n:n + 50]))
+        if r is None:
+            ok = False
+            break
+        for v in r.get("items", []):
+            st = v.get("status", {})
+            good = st.get("embeddable", True) and st.get("privacyStatus") == "public"
+            info[v["id"]] = blocked_in(v.get("contentDetails", {}).get("regionRestriction")) if good else None
+    if not ok:
+        print("YouTube: перепроверка не удалась — оставляю как было")
+        return videos, 0
+    gone = 0
+    for cid, vs in videos.items():
+        keep = []
+        for v in vs:
+            b = info.get(v["id"])
+            if b is None or all(c in b for c in MAIN):
+                gone += 1
+                continue
+            v["blk"] = b
+            keep.append(v)
+        videos[cid] = keep
+    return videos, gone
 
 GENRES = [("Комедии", ("комедия", "комедийный")), ("Военные", ("военный", "война", "военная драма")),
           ("Детективы", ("детектив", "криминал")), ("Приключения", ("приключения", "приключенческий")),
@@ -106,8 +147,8 @@ def fetch_channel(cid, min_minutes, limit=5000, include=None, exclude=None):
             sn, cd, st = v["snippet"], v["contentDetails"], v.get("status", {})
             if not st.get("embeddable", True) or st.get("privacyStatus") != "public":
                 continue
-            rr = cd.get("regionRestriction") or {}
-            if REGION in rr.get("blocked", []) or ("allowed" in rr and REGION not in rr["allowed"]):
+            blk = blocked_in(cd.get("regionRestriction"))
+            if all(c in blk for c in MAIN):
                 continue
             if iso_minutes(cd.get("duration")) < min_minutes:
                 continue
@@ -121,7 +162,7 @@ def fetch_channel(cid, min_minutes, limit=5000, include=None, exclude=None):
                 continue
             th = sn.get("thumbnails", {})
             img = (th.get("maxres") or th.get("standard") or th.get("high") or th.get("medium") or {}).get("url", "")
-            out.append({"id": v["id"], "title": title, "desc": sn.get("description", ""), "img": img})
+            out.append({"id": v["id"], "title": title, "desc": sn.get("description", ""), "img": img, "blk": blk})
     return out
 
 
@@ -323,6 +364,13 @@ def main(cfg_path, dst, cache_path):
         json.dump(cache, open(cache_path, "w", encoding="utf-8"), ensure_ascii=False, indent=0, sort_keys=True)
     elif not os.environ.get("YOUTUBE_API_KEY"):
         print("YOUTUBE_API_KEY не задан — беру список из кэша")
+    vids_all = cache.get("videos") or {}
+    stale = any("blk" not in v for vs in vids_all.values() for v in vs) or time.time() - cache.get("checked", 0) > 6 * 3600
+    if os.environ.get("YOUTUBE_API_KEY") and vids_all and stale:
+        cache["videos"], gone = recheck(vids_all)
+        cache["checked"] = int(time.time())
+        print("перепроверка: убрано недоступных", gone)
+        json.dump(cache, open(cache_path, "w", encoding="utf-8"), ensure_ascii=False, indent=0, sort_keys=True)
 
     rows, seen = [], set()
     for ch in cfg["channels"]:
@@ -374,6 +422,8 @@ def main(cfg_path, dst, cache_path):
             attrs += f' tvg-logo="{v["img"]}" poster="{v["img"]}"'
         if r["ser"]:
             attrs += f' x-series="{r["ser"]}"'
+        if v.get("blk"):
+            attrs += f' x-block="{",".join(v["blk"])}"'
         d = (series_about(name) if r["ch"]["group"] == "Мультфильмы" else "") or clean_desc(v.get("desc", ""))
         if d:
             attrs += f' description="{d}"'
