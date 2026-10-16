@@ -29,7 +29,7 @@ def get(**params):
             with urllib.request.urlopen(req, timeout=30) as r:
                 return json.load(r)
         except Exception:  # noqa: BLE001 — сеть: повторяем, потом сдаёмся
-            time.sleep(2 * (k + 1))
+            time.sleep(4 * (k + 1))   # Википедия ограничивает частые запросы — ждём дольше
     return None
 
 
@@ -91,16 +91,23 @@ def good(page_title, extract, title, year):
     return True
 
 
+NET_ERR = "net"   # Википедия не ответила — это не «статьи нет», попробуем в следующий раз
+
+
 def find(title, year):
     queries = [f"{title} фильм {year}" if year else f"{title} фильм"]
     if year:
         queries.append(f"{title} {year}")
     for q in queries:
         r = get(action="query", list="search", srsearch=q, srlimit=6, srnamespace=0)
+        if r is None:
+            return NET_ERR
         hits = [h["title"] for h in ((r or {}).get("query") or {}).get("search", [])]
         if not hits:
             continue
         ex = get(action="query", prop="extracts", exintro=1, explaintext=1, exlimit=20, redirects=1, titles="|".join(hits))
+        if ex is None:
+            return NET_ERR
         pages = {p["title"]: p.get("extract") or "" for p in ((ex or {}).get("query") or {}).get("pages", [])}
         for h in hits:  # по порядку релевантности поиска
             text = pages.get(h, "")
@@ -110,7 +117,7 @@ def find(title, year):
 
 
 SPARQL = "https://query.wikidata.org/sparql"
-SEARCH_LIMIT = 150  # медленный запасной поиск — не больше стольких фильмов за запуск
+SEARCH_LIMIT = 300  # медленный запасной поиск — не больше стольких фильмов за запуск
 
 
 def http_json(url, data=None):
@@ -225,6 +232,9 @@ def main(src, cache_path):
             break
         t, y = todo[k]
         r = find(t, y)
+        time.sleep(0.3)
+        if r == NET_ERR:
+            continue
         cache[k] = r if r else {"miss": now}
         found += bool(r)
     for k in left[SEARCH_LIMIT:]:

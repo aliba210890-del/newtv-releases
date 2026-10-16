@@ -193,16 +193,56 @@ def parse_title(title):
     return name or title.strip(), year, low
 
 
+SPAM = re.compile(r"подпис|колокольч|ставь|лайк|поделись|likee|товар|магазин|сборник|все серии|серии подряд|плейлист|канал|"
+                  r"приложени|скачай|смотрите|смотри |премьер|новая серия|новую серию|новые серии|в сборник вошли|instagram|vk\.com|"
+                  r"vkontakte|telegram|телеграм|tiktok|одноклассник|яндекс|дзен|соцсет|социальн|сайт|©|rutube|youtube|"
+                  r"subscribe|abonniere|subskryb|підпис|жазыл|арнамыз|бөліс|мульт.{0,15}для детей|для малышей|мультики для|мультик\b|"
+                  r"дошкольник|не пропустить|мерч|riki|игры с|facebook|whatsapp|twitter|мобильді|қосымша|հետևեք|կայքը|ֆիլմեր|"
+                  r"ganzer film|kostenlos|in voller länge|moviedome|netzkino|watch other|our site|full movie|free movie|"
+                  r"киножурнал|хочу вс[её] знать|научно-популярный сериал|по ссылке|anzeige|strompreise|znajdziesz tu|witamy w", re.I)
+SERIES_ABOUT = [  # описание сериала, если у ролика нет нормального своего
+    ("оранжевая корова", "Мультсериал «Союзмультфильма» о весёлой семье коров и забавных приключениях их детей."),
+    ("новое простоквашино", "Новые истории о коте Матроскине, псе Шарике, почтальоне Печкине и жителях деревни Простоквашино."),
+    ("простоквашино", "Истории о дяде Фёдоре, коте Матроскине, псе Шарике и почтальоне Печкине из деревни Простоквашино."),
+    ("фиксики", "Мультсериал о фиксиках — маленьких человечках, которые живут внутри техники и тайно её чинят. Дети узнают, как устроены вещи вокруг."),
+    ("ну, погоди! каникулы", "Новые приключения Волка и Зайца из знаменитого мультфильма «Ну, погоди!» — теперь на каникулах."),
+    ("ну, погоди", "Знаменитый мультфильм о Волке, который гоняется за Зайцем и всегда остаётся ни с чем."),
+    ("умка", "Мультсериал о белом медвежонке Умке и его друзьях на Севере — по мотивам знаменитого советского мультфильма."),
+    ("крутиксы", "Мультсериал о звериной суперкоманде, которая стоит на страже мира и порядка."),
+    ("чебурашка", "Новые истории о Чебурашке и крокодиле Гене от студии «Союзмультфильм»."),
+    ("смешарики", "Мультсериал о добрых круглых героях — Кроше, Ёжике, Нюше, Бараше, Лосяше и их друзьях."),
+]
+
+
+def series_about(name):
+    low = name.lower()
+    for k, v in SERIES_ABOUT:
+        if low.startswith(k) or (" " + k) in low:
+            return v
+    return ""
+
+
 def clean_desc(d):
-    d = re.sub(r"https?://\S+", "", d)
-    d = re.sub(r"#\S+", "", d)
+    """Описание ролика без рекламы канала: «Подпишись», ссылки, хэштеги, таймкоды, списки других мультиков.
+    Если осмысленного текста не осталось — пусто (лучше без описания, чем с мусором)."""
+    d = re.sub(r"https?://\S+|www\.\S+", "", d)
+    d = re.sub(r"#\S+|@\S+", "", d)
+    d = re.sub(r"^.*?Սյուժե\s*", "", d, flags=re.S)       # армянские: «Сюжет» — дальше идёт описание
+    parts = []
+    for seg in re.split(r"\n|[►▶👉👇🔻⭐🔹🔸▫▪•|*]+|\s[-–—]{2,}\s", d):
+        parts.extend(re.split(r"(?<=[.!?:])\s+", seg))
     keep = []
-    for line in d.splitlines():
-        line = line.strip()
-        if not line or re.search(r"подпис|subscribe|смотрите так ?же|плейлист|канал|instagram|vk\.com|vkontakte|telegram|телеграм|tiktok|одноклассники|яндекс|дзен|социальных сет|сайт |©|^[✔✅▶►•]", line, re.I):
+    for x in parts:
+        x = EMOJI.sub(" ", x)
+        x = re.sub(r"\s+", " ", x).strip(" -–—:;,.!")
+        if not x or SPAM.search(x) or re.search(r"\d{1,2}:\d{2}", x):
             continue
-        keep.append(line)
-    t = re.sub(r"\s+", " ", " ".join(keep)).strip()
+        if len(x.split()) < 4 or not re.search(r"[^\W\d_]{3}", x):
+            continue
+        keep.append(x + ("" if x[-1] in ".!?…" else "."))
+    t = " ".join(keep)
+    if len(t) < 60:
+        return ""
     if len(t) > 650:
         cut = t[:650]
         end = max(cut.rfind(". "), cut.rfind("! "), cut.rfind("? "))
@@ -277,7 +317,7 @@ def main(cfg_path, dst, cache_path):
             attrs = f'group-title="{group}"'
             if v.get("img"):
                 attrs += f' tvg-logo="{v["img"]}" poster="{v["img"]}"'
-            d = clean_desc(v.get("desc", ""))
+            d = (series_about(name) if ch["group"] == "Мультфильмы" else "") or clean_desc(v.get("desc", ""))
             if d:
                 attrs += f' description="{d}"'
             lines.append(f"#EXTINF:-1 {attrs},{label}")
