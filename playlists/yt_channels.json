@@ -174,24 +174,6 @@
    "foreign": true
   },
   {
-   "name": "Studio Filmowe KADR",
-   "handle": "@studiofilmowekadr",
-   "group": "Польское кино (Polski)",
-   "min_minutes": 55,
-   "max": 1000,
-   "foreign": true,
-   "search": "Studio Filmowe KADR"
-  },
-  {
-   "name": "Studio Filmowe TOR",
-   "handle": "@studiofilmowetor",
-   "group": "Польское кино (Polski)",
-   "min_minutes": 55,
-   "max": 1000,
-   "foreign": true,
-   "search": "Studio Filmowe TOR"
-  },
-  {
    "name": "Studio Filmów Rysunkowych",
    "handle": "@studiofilmowrysunkowych",
    "group": "Мультфильмы на польском (Polski)",
