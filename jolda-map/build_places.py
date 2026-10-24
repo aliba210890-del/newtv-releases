@@ -5,18 +5,33 @@ import gzip, json, sys, time, urllib.request, urllib.parse
 BBOX = (50.90, 71.05, 51.40, 71.85)  # юг, запад, север, восток — Астана с пригородами
 OVERPASS = ["https://overpass-api.de/api/interpreter", "https://overpass.kumi.systems/api/interpreter", "https://maps.mail.ru/osm/tools/overpass/api/interpreter"]
 
-def q(body):
-    b = "(%s,%s,%s,%s)" % BBOX
-    data = "[out:json][timeout:900];(" + body.replace("{b}", b) + ");out center tags;"
-    for url in OVERPASS:
-        for attempt in range(3):
+def q1(body, bbox):
+    b = "(%s,%s,%s,%s)" % bbox
+    data = "[out:json][timeout:240];(" + body.replace("{b}", b) + ");out center tags;"
+    last = None
+    for attempt in range(4):
+        for url in OVERPASS:
             try:
-                req = urllib.request.Request(url, data=urllib.parse.urlencode({"data": data}).encode(), headers={"User-Agent": "jolda-places/1.0"})
-                with urllib.request.urlopen(req, timeout=1000) as r:
-                    return json.load(r)["elements"]
+                req = urllib.request.Request(url, data=urllib.parse.urlencode({"data": data}).encode(), headers={"User-Agent": "jolda-places/1.0 (taxi app, Astana)"})
+                with urllib.request.urlopen(req, timeout=300) as r:
+                    els = json.load(r)["elements"]
+                    print("  ok", url.split("/")[2], len(els), flush=True)
+                    return els
             except Exception as e:
-                print("overpass", url, attempt, e, file=sys.stderr); time.sleep(20)
-    raise SystemExit("Overpass недоступен")
+                last = e; print("  fail", url.split("/")[2], attempt, repr(e)[:200], flush=True)
+        time.sleep(30 * (attempt + 1))
+    print("  ПРОПУ�СК участка", bbox, repr(last)[:200], flush=True)
+    return []
+
+def q(body, n=4):
+    # город делим на участки — небольшие запросы Overpass отдаёт надёжнее
+    s0, w0, n0, e0 = BBOX; out = []; dy, dx = (n0 - s0) / n, (e0 - w0) / n
+    for i in range(n):
+        for j in range(n):
+            bb = (round(s0 + i * dy, 4), round(w0 + j * dx, 4), round(s0 + (i + 1) * dy, 4), round(w0 + (j + 1) * dx, 4))
+            print("участок", i, j, flush=True)
+            out += q1(body, bb); time.sleep(3)
+    return out
 
 def ll(e):
     if "lat" in e: return e["lat"], e["lon"]

@@ -16,7 +16,7 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 120
     env:
       GH_TOKEN: ${{ github.token }}
       R: ${{ github.repository }}
@@ -25,6 +25,9 @@ jobs:
       - name: Скачать текущую базу
         run: gh release download map -R "$R" -p astana-places.json.gz -O old.json.gz
       - name: Собрать новую базу
-        run: python3 jolda-map/build_places.py old.json.gz astana-places.json.gz
+        run: python3 -u jolda-map/build_places.py old.json.gz astana-places.json.gz 2>&1 | tee places-build.log; test ${PIPESTATUS[0]} -eq 0
       - name: Обновить файл в релизе
         run: gh release upload map astana-places.json.gz -R "$R" --clobber
+      - name: Журнал сборки
+        if: always()
+        run: gh release upload map places-build.log -R "$R" --clobber || true
