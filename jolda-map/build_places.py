@@ -88,6 +88,12 @@ def main(old_path, out_path):
         if la is None: continue
         a = [t["addr:street"], t["addr:housenumber"], round(la, 5), round(ln, 5)]
         addr.setdefault((a[0].lower(), str(a[1]).lower(), round(la, 4), round(ln, 4)), a)
+    # места, которых нет в OpenStreetMap, — добавляем вручную (jolda-map/extra_places.json)
+    try:
+        import os
+        for p in json.load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "extra_places.json"), encoding="utf-8")):
+            pois[(p[0].lower(), round(p[2], 3), round(p[3], 3))] = p
+    except Exception as e: print("extra:", e)
     out = {"pois": list(pois.values()), "addr": list(addr.values()), "cams": old.get("cams", []), "license": "© OpenStreetMap contributors, ODbL", "built": time.strftime("%Y-%m-%d")}
     with gzip.open(out_path, "wt", encoding="utf-8") as f: json.dump(out, f, ensure_ascii=False, separators=(",", ":"))
     print("мест: %d → %d, адресов: %d → %d, ЖК: %d" % (n0p, len(pois), n0a, len(addr), sum(1 for p in pois.values() if p[1] == "ЖК")))
