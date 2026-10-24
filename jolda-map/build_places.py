@@ -38,6 +38,11 @@ CAT = [
     (lambda t: t.get("tourism") in ("hotel", "motel", "guest_house", "apartment"), "Отель"), (lambda t: t.get("tourism") == "hostel", "Хостел"), (lambda t: t.get("tourism") == "museum", "Музей"),
     (lambda t: t.get("tourism") in ("attraction", "viewpoint", "artwork"), "Достопримечательность"), (lambda t: t.get("leisure") == "park", "Парк"),
     (lambda t: t.get("leisure") in ("fitness_centre", "sports_centre", "sports_hall"), "Спорткомплекс"), (lambda t: t.get("leisure") == "stadium", "Стадион"),
+    (lambda t: t.get("shop") in ("car_repair", "tyres", "car_parts") or t.get("craft") == "car_repair" or t.get("amenity") == "car_repair", "СТО"),
+    (lambda t: t.get("shop") == "car", "Автосалон"), (lambda t: t.get("shop") in ("supermarket", "convenience"), "Магазин"),
+    (lambda t: t.get("amenity") in ("nightclub", "karaoke_box") or t.get("leisure") in ("bowling_alley", "amusement_arcade", "escape_game", "water_park", "trampoline_park", "ice_rink"), "Развлечения"),
+    (lambda t: t.get("leisure") in ("playground",), "Детская площадка"), (lambda t: t.get("amenity") in ("sauna",) or t.get("leisure") == "sauna", "Баня/сауна"),
+    (lambda t: t.get("shop") in ("beauty", "hairdresser") or t.get("amenity") == "beauty", "Салон красоты"),
     (lambda t: t.get("shop") == "mall", "ТРЦ"), (lambda t: t.get("shop"), "Магазин"), (lambda t: t.get("office"), "Офис"),
     (lambda t: t.get("place") in ("village", "hamlet", "town", "suburb"), "Посёлок"), (lambda t: t.get("place") in ("neighbourhood", "quarter"), "Район"),
     (lambda t: t.get("amenity") or t.get("leisure") or t.get("tourism") or t.get("craft") or t.get("building"), "Здание"),
@@ -54,7 +59,7 @@ def main(old_path, out_path):
     pois = {(p[0].lower(), round(p[2], 3), round(p[3], 3)): p for p in old["pois"]}
     addr = {(a[0].lower(), str(a[1]).lower(), round(a[2], 4), round(a[3], 4)): a for a in old["addr"]}
     n0p, n0a = len(pois), len(addr)
-    els = q('nwr["name"]["landuse"="residential"]{b};nwr["name"]["residential"]{b};nwr["name"]["building"]{b};nwr["name"]["amenity"]{b};nwr["name"]["shop"]{b};nwr["name"]["office"]{b};nwr["name"]["tourism"]{b};nwr["name"]["leisure"]{b};nwr["name"]["healthcare"]{b};nwr["name"]["craft"]{b};nwr["name"]["place"]{b};nwr["name"]["railway"="station"]{b};nwr["name"]["aeroway"]{b}')
+    els = q('nwr["name"]["landuse"="residential"]{b};nwr["name"]["residential"]{b};nwr["name"]["building"]{b};nwr["name"]["amenity"]{b};nwr["name"]["shop"]{b};nwr["name"]["office"]{b};nwr["name"]["tourism"]{b};nwr["name"]["leisure"]{b};nwr["name"]["healthcare"]{b};nwr["name"]["craft"]{b};nwr["name"]["place"]{b};nwr["name"]["railway"="station"]{b};nwr["name"]["aeroway"]{b};nwr["name"]["craft"]{b};nwr["name"]["sport"]{b}')
     for e in els:
         t = e.get("tags", {}); la, ln = ll(e)
         if la is None: continue
