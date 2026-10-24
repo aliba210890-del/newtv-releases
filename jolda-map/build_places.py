@@ -1,36 +1,29 @@
 # База адресов и мест «Жолда» (Астана и пригороды) из свежего OpenStreetMap.
 # Дополняет старую базу: всё, что было, остаётся; новое из OSM — добавляется.
-import gzip, json, sys, time, urllib.request, urllib.parse
+import gzip, json, sys, time
 
 BBOX = (50.90, 71.05, 51.40, 71.85)  # юг, запад, север, восток — Астана с пригородами
-OVERPASS = ["https://overpass-api.de/api/interpreter", "https://overpass.kumi.systems/api/interpreter", "https://maps.mail.ru/osm/tools/overpass/api/interpreter"]
+_OLD_MIRRORS = ["https://overpass-api.de/api/interpreter", "https://overpass.kumi.systems/api/interpreter", "https://maps.mail.ru/osm/tools/overpass/api/interpreter"]
 
-def q1(body, bbox):
-    b = "(%s,%s,%s,%s)" % bbox
-    data = "[out:json][timeout:240];(" + body.replace("{b}", b) + ");out center tags;"
-    last = None
-    for attempt in range(4):
-        for url in OVERPASS:
-            try:
-                req = urllib.request.Request(url, data=urllib.parse.urlencode({"data": data}).encode(), headers={"User-Agent": "jolda-places/1.0 (taxi app, Astana)"})
-                with urllib.request.urlopen(req, timeout=300) as r:
-                    els = json.load(r)["elements"]
-                    print("  ok", url.split("/")[2], len(els), flush=True)
-                    return els
-            except Exception as e:
-                last = e; print("  fail", url.split("/")[2], attempt, repr(e)[:200], flush=True)
-        time.sleep(30 * (attempt + 1))
-    print("  ПРОПУ�СК участка", bbox, repr(last)[:200], flush=True)
-    return []
-
-def q(body, n=4):
-    # город делим на участки — небольшие запросы Overpass отдаёт надёжнее
-    s0, w0, n0, e0 = BBOX; out = []; dy, dx = (n0 - s0) / n, (e0 - w0) / n
-    for i in range(n):
-        for j in range(n):
-            bb = (round(s0 + i * dy, 4), round(w0 + j * dx, 4), round(s0 + (i + 1) * dy, 4), round(w0 + (j + 1) * dx, 4))
-            print("участок", i, j, flush=True)
-            out += q1(body, bb); time.sleep(3)
+def load_export(path):
+    # строки GeoJSON от «osmium export»: берём теги и центр объекта
+    out = []
+    with open(path, encoding="utf-8") as f:
+        for line in f:
+            line = line.strip().lstrip("\x1e")
+            if not line: continue
+            try: ft = json.loads(line)
+            except Exception: continue
+            g = ft.get("geometry") or {}; c = g.get("coordinates")
+            if not c: continue
+            t = g.get("type")
+            if t == "Point": pts = [c]
+            elif t == "LineString": pts = c
+            elif t == "Polygon": pts = c[0]
+            elif t == "MultiPolygon": pts = c[0][0]
+            else: continue
+            lon = sum(p[0] for p in pts) / len(pts); lat = sum(p[1] for p in pts) / len(pts)
+            out.append({"lat": lat, "lon": lon, "tags": ft.get("properties") or {}})
     return out
 
 def ll(e):
@@ -69,12 +62,16 @@ def cat(t):
         except Exception: pass
     return "Здание"
 
+EXPORT = "astana.geojsonseq"
+
 def main(old_path, out_path):
     old = json.load(gzip.open(old_path)) if old_path else {"pois": [], "addr": [], "cams": []}
     pois = {(p[0].lower(), round(p[2], 3), round(p[3], 3)): p for p in old["pois"]}
     addr = {(a[0].lower(), str(a[1]).lower(), round(a[2], 4), round(a[3], 4)): a for a in old["addr"]}
     n0p, n0a = len(pois), len(addr)
-    els = q('nwr["name"]["landuse"="residential"]{b};nwr["name"]["residential"]{b};nwr["name"]["building"]{b};nwr["name"]["amenity"]{b};nwr["name"]["shop"]{b};nwr["name"]["office"]{b};nwr["name"]["tourism"]{b};nwr["name"]["leisure"]{b};nwr["name"]["healthcare"]{b};nwr["name"]["craft"]{b};nwr["name"]["place"]{b};nwr["name"]["railway"="station"]{b};nwr["name"]["aeroway"]{b};nwr["name"]["craft"]{b};nwr["name"]["sport"]{b}')
+    allels = load_export(EXPORT)
+    print("объектов в выгрузке:", len(allels), flush=True)
+    els = [e for e in allels if e["tags"].get("name")]
     for e in els:
         t = e.get("tags", {}); la, ln = ll(e)
         if la is None: continue
@@ -85,7 +82,7 @@ def main(old_path, out_path):
         p = [name, c, round(la, 5), round(ln, 5), t.get("addr:street", ""), t.get("addr:housenumber", ""), t.get("phone", t.get("contact:phone", "")), t.get("opening_hours", ""), alias]
         k = (name.lower(), round(la, 3), round(ln, 3))
         if k not in pois or (len(pois[k]) < 9 and alias): pois[k] = p
-    els = q('nwr["addr:housenumber"]["addr:street"]{b}')
+    els = [e for e in allels if e["tags"].get("addr:housenumber") and e["tags"].get("addr:street")]
     for e in els:
         t = e.get("tags", {}); la, ln = ll(e)
         if la is None: continue

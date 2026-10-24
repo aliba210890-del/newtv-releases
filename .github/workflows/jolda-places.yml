@@ -16,7 +16,7 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 120
+    timeout-minutes: 40
     env:
       GH_TOKEN: ${{ github.token }}
       R: ${{ github.repository }}
@@ -24,6 +24,17 @@ jobs:
       - uses: actions/checkout@v4
       - name: Скачать текущую базу
         run: gh release download map -R "$R" -p astana-places.json.gz -O old.json.gz
+      - name: Скачать карту Казахстана (OpenStreetMap, Geofabrik)
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq osmium-tool
+          curl -fsSL --retry 5 -o kz.pbf https://download.geofabrik.de/asia/kazakhstan-latest.osm.pbf
+          ls -la kz.pbf
+      - name: Вырезать Астану
+        run: |
+          osmium extract -b 71.05,50.90,71.85,51.40 kz.pbf -o astana.pbf --overwrite
+          osmium tags-filter astana.pbf nwr/name nwr/addr:housenumber -o f.pbf --overwrite
+          osmium export f.pbf -f geojsonseq -o astana.geojsonseq --overwrite
+          wc -l astana.geojsonseq
       - name: Собрать новую базу
         run: python3 -u jolda-map/build_places.py old.json.gz astana-places.json.gz 2>&1 | tee places-build.log; test ${PIPESTATUS[0]} -eq 0
       - name: Обновить файл в релизе
