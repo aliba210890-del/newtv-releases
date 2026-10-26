@@ -1,0 +1,59 @@
+#voice	en-GB-SoniaNeural
+arrive_soon	you will arrive.
+arrived	You have arrived.
+bye_day	We have arrived. Thank you for choosing Zholda! Please don't forget your belongings. Have a nice day!
+bye_eve	We have arrived. Thank you for choosing Zholda! Please don't forget your belongings. Have a nice evening!
+bye_night	We have arrived. Thank you for choosing Zholda! Please don't forget your belongings. Good night!
+camera	speed camera,
+d100	In one hundred meters,
+d1000	In one kilometer,
+d1500	In one and a half kilometers,
+d200	In two hundred meters,
+d2000	In two kilometers,
+d300	In three hundred meters,
+d3000	In three kilometers,
+d400	In four hundred meters,
+d500	In five hundred meters,
+d600	In six hundred meters,
+d700	In seven hundred meters,
+d800	In eight hundred meters,
+d900	In nine hundred meters,
+depart	Starting the route.
+go	Let's go!
+greet_start	Welcome to Zholda taxi! Please fasten your seat belt. Have a pleasant trip!
+hleft	turn sharp left.
+hright	turn sharp right.
+keepl	keep left.
+keepr	keep right.
+keeps	keep straight.
+left	turn left.
+lim100	limit one hundred.
+lim40	limit forty.
+lim50	limit fifty.
+lim60	limit sixty.
+lim70	limit seventy.
+lim80	limit eighty.
+lim90	limit ninety.
+mergel	merge left.
+merger	merge right.
+preview	Hello! I am the Zholda navigation voice.
+ramp	take the ramp.
+rampl	take the ramp on the left.
+rampr	take the ramp on the right.
+rerouted	Route recalculated.
+right	turn right.
+ring1	at the roundabout, take the first exit.
+ring2	at the roundabout, take the second exit.
+ring3	at the roundabout, take the third exit.
+ring4	at the roundabout, take the fourth exit.
+ring5	at the roundabout, take the fifth exit.
+ringexit	exit the roundabout.
+sleft	bear left.
+slow	Slow down.
+sound_on	Sound on.
+sright	bear right.
+stop	intermediate stop.
+straight	continue straight.
+then	Then
+to_client	Heading to the client.
+uturn	make a U-turn.

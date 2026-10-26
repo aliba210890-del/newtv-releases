@@ -1,0 +1,27 @@
+# Голос навигатора Жолда на казахском и английском: озвучивает фразы и кладёт архив в релиз «voice»
+name: Jolda voice
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ["jolda-voice/**", ".github/workflows/jolda-voice.yml"]
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      GH_TOKEN: ${{ github.token }}
+      R: ${{ github.repository }}
+    steps:
+      - uses: actions/checkout@v4
+      - run: pip install edge-tts
+      - run: python3 -u jolda-voice/make.py
+      - run: cd out && zip -q ../jolda-voice-kk-en.zip *.mp3 && ls | wc -l
+      - run: |
+          gh release view voice -R "$R" >/dev/null 2>&1 || gh release create voice -R "$R" -t "Jolda voice" -n "Голос навигатора Жолда"
+          gh release upload voice jolda-voice-kk-en.zip -R "$R" --clobber
