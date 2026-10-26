@@ -178,6 +178,46 @@ def geocode(text, idx, near=None):
                 if math.hypot((best[0] - near[0]) * 111, (best[1] - near[1]) * 69) <= near[2]: return best
     return None
 
+AREA_RX = re.compile(r"микрорайон|\bмкр\b|шағын аудан|\bмассив|\bквартал", re.I)
+STREET_RX = re.compile(r"улица|көшесі|проспект|даңғылы|переулок|тұйығы|шоссе|бульвар|трасса|проезд|тупик|көше", re.I)
+def area_alias(name):
+    low = name.lower()
+    m = re.search(r"(\d+)\s*-?\s*([абвгд])?(?![а-яё])", low)
+    if not m: return ""
+    n = m.group(1).lstrip("0") or "0"; l = m.group(2) or ""
+    if re.search(r"квартал", low): return f"{n}{l} квартал квартал {n}{l}"
+    if re.search(r"массив", low): return f"массив {n}{l}"
+    return " ".join([f"{n}{l} мкр", f"мкр {n}{l}", f"{n}{l} микрорайон", f"{n}{l}-ші шағын аудан"])
+def derive_from_addr(pois, addr):
+    import statistics as st
+    groups = {}
+    for a in addr.values():
+        nm = str(a[0]).strip()
+        if not nm: continue
+        kind = "Район" if AREA_RX.search(nm) and not STREET_RX.search(nm) else "Улица" if STREET_RX.search(nm) or True else None
+        groups.setdefault((nm, kind), []).append((a[2], a[3]))
+    have = {}
+    for p in pois.values():
+        if p[1] in ("Район", "Улица"): have.setdefault(nkey(p[0]), []).append((p[2], p[3]))
+    added = {"Район": 0, "Улица": 0}
+    for (nm, kind), pts in groups.items():
+        # одна и та же улица в разных посёлках — разные места: делим точки на «кучки» дальше 3 км друг от друга
+        clusters = []
+        for q in pts:
+            for c in clusters:
+                if math.hypot((c[0][0] - q[0]) * 111, (c[0][1] - q[1]) * 69) < 3: c.append(q); break
+            else: clusters.append([q])
+        for c in clusters:
+            if kind == "Улица" and len(c) < 3: continue
+            la, ln = st.median(x[0] for x in c), st.median(x[1] for x in c)
+            near = [h for h in have.get(nkey(nm), []) if math.hypot((h[0] - la) * 111, (h[1] - ln) * 69) < (2.5 if kind == "Район" else 1.5)]
+            if near: continue
+            alias = area_alias(nm) if kind == "Район" else ""
+            p = [nm, kind, round(la, 5), round(ln, 5), "", "", "", "", alias]
+            pois[(nm.lower(), round(la, 3), round(ln, 3))] = p
+            have.setdefault(nkey(nm), []).append((la, ln)); added[kind] += 1
+    print("из адресов добавлено:", added, flush=True)
+
 STABLE = {"ЖК", "Школа", "Детсад", "Университет", "Колледж", "Больница", "Клиника", "Храм/мечеть", "ТРЦ", "Парк", "Музей", "Театр", "Госучреждение", "Вокзал", "Спорткомплекс", "АЗС", "Отель"}
 def merge_extra(pois, addr=None):
     aidx = build_addr_index(addr or {})
@@ -290,6 +330,12 @@ def main(old_path, out_path):
     for p in pois.values():
         p[1] = cat_by_name(p[0], p[1])
         if len(p) > 4 and re.search(r"https?:|www\.|goo\.gl", str(p[4])): p[4] = ""
+    # --- из адресов: микрорайоны, кварталы, массивы и улицы каждого посёлка как отдельные места ---
+    # (в сёлах у улиц часто нет линии в OSM, а у микрорайонов — точки; клиент же пишет «4 мкр» или «улица Абая, Малиновка»)
+    try: derive_from_addr(pois, addr)
+    except Exception as e: print("из адресов:", e, flush=True)
+    # безымянные «4», «4/1» — это номера домов, а не места: убираем из мест (адреса остаются)
+    for k in [k for k, p in pois.items() if p[1] == "Здание" and re.fullmatch(r"\d+[а-яa-z]?(/\d+[а-яa-z]?)?", p[0].strip().lower())]: del pois[k]
     # улицы в OSM разбиты на десятки кусков — оставляем по одной точке на каждые ~1,5 км улицы
     keep, seen = {}, {}
     for k, p in pois.items():
