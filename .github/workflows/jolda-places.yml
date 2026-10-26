@@ -35,6 +35,15 @@ jobs:
           osmium tags-filter astana.pbf nwr/name nwr/addr:housenumber -o f.pbf --overwrite
           osmium export f.pbf -f geojsonseq -o astana.geojsonseq --overwrite
           wc -l astana.geojsonseq
+      - name: Скачать открытые базы организаций (Overture Maps, Foursquare)
+        continue-on-error: true
+        timeout-minutes: 25
+        run: |
+          pip install -q duckdb overturemaps
+          python3 -u jolda-map/fetch_extra.py 2>&1 | tee extra-fetch.log
+          ls -la *.ndjson || true
+          for f in overture fsq; do [ -s $f.ndjson ] && gzip -kf $f.ndjson && gh release upload map $f.ndjson.gz -R "$R" --clobber || true; done
+          gh release upload map extra-fetch.log -R "$R" --clobber || true
       - name: Собрать новую базу
         run: python3 -u jolda-map/build_places.py old.json.gz astana-places.json.gz 2>&1 | tee places-build.log; test ${PIPESTATUS[0]} -eq 0
       - name: Обновить файл в релизе
