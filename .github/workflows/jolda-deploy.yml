@@ -1,0 +1,40 @@
+# Выкладка сервера Jolda в Cloudflare без ручного копирования.
+# Код лежит здесь только в зашифрованном виде (jolda-deploy/worker.js.enc), ключ — в секретах GitHub.
+# Обновляется только код воркера: базы, привязки и секреты в Cloudflare не трогаются.
+name: Jolda deploy
+
+on:
+  push:
+    branches: [main]
+    paths: ["jolda-deploy/worker.js.enc"]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Расшифровать код
+        env:
+          JOLDA_KEY: ${{ secrets.JOLDA_KEY }}
+        run: |
+          test -n "$JOLDA_KEY" || { echo "Нет секрета JOLDA_KEY"; exit 1; }
+          openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 -pass env:JOLDA_KEY -in jolda-deploy/worker.js.enc -out worker.js
+          ls -la worker.js
+      - name: Обновить код воркера jolda
+        env:
+          CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+          CF_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
+        run: |
+          test -n "$CF_API_TOKEN" && test -n "$CF_ACCOUNT_ID" || { echo "Нет секретов CF_API_TOKEN / CF_ACCOUNT_ID"; exit 1; }
+          curl -sS -X PUT "https://api.cloudflare.com/client/v4/accounts/$CF_ACCOUNT_ID/workers/scripts/jolda/content" \
+            -H "Authorization: Bearer $CF_API_TOKEN" \
+            -F 'metadata={"main_module":"worker.js"};type=application/json' \
+            -F "worker.js=@worker.js;type=application/javascript+module" > out.json
+          python3 -c "import json;d=json.load(open('out.json'));print('success:',d.get('success'),d.get('errors'))"
+          python3 -c "import json,sys;sys.exit(0 if json.load(open('out.json')).get('success') else 1)"
+      - name: Проверить сайт
+        run: |
+          sleep 5
+          curl -s -o /dev/null -w "partners %{http_code}\n" "https://jolda.aliba210890.workers.dev/partners?x=$RANDOM"
