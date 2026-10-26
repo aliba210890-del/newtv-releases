@@ -2,7 +2,7 @@
 # Дополняет старую базу: всё, что было, остаётся; новое из OSM — добавляется.
 import gzip, json, sys, time
 
-BBOX = (50.90, 71.05, 51.40, 71.85)  # юг, запад, север, восток — Астана с пригородами
+BBOX = (50.20, 70.00, 52.05, 72.90)  # юг, запад, север, восток — Астана и 100 км вокруг (как карта)
 _OLD_MIRRORS = ["https://overpass-api.de/api/interpreter", "https://overpass.kumi.systems/api/interpreter", "https://maps.mail.ru/osm/tools/overpass/api/interpreter"]
 
 def load_export(path):
@@ -32,6 +32,7 @@ def ll(e):
     return c.get("lat"), c.get("lon")
 
 CAT = [
+    (lambda t: t.get("place") in ("city", "town"), "Город"), (lambda t: t.get("place") in ("village", "hamlet", "isolated_dwelling", "suburb"), "Посёлок"),
     (lambda t: t.get("landuse") == "residential" or t.get("residential") or (t.get("building") in ("apartments", "residential") and t.get("name")), "ЖК"),
     (lambda t: t.get("shop") == "mall" or t.get("amenity") == "marketplace" and False, "ТРЦ"),
     (lambda t: t.get("amenity") == "cafe", "Кафе"), (lambda t: t.get("amenity") == "restaurant", "Ресторан"),
