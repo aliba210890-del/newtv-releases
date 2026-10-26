@@ -37,6 +37,12 @@ def run_fsq():
     pr = subprocess.run(["aws", "s3", "ls", "--no-sign-request", "--region", "us-east-1", "s3://fsq-os-places-us-east-1/release/"], capture_output=True, text=True)
     out = pr.stdout
     print(out, pr.stderr, flush=True)
+    if "dt=" not in out:
+        for cmd in (["aws", "s3", "ls", "--no-sign-request", "s3://fsq-os-places-us-east-1/"],
+                    ["aws", "s3", "ls", "--no-sign-request", "--endpoint-url", "https://data.source.coop", "s3://fused/fsq-os-places/"],
+                    ["aws", "s3", "ls", "--no-sign-request", "--endpoint-url", "https://data.source.coop", "s3://fused/fsq-os-places/2025-02-06/"],
+                    ["curl", "-sL", "https://data.source.coop/fused/fsq-os-places/README.md"]):
+            pr = subprocess.run(cmd, capture_output=True, text=True); print(" ".join(cmd), "\n", pr.stdout[:3000], pr.stderr[:500], flush=True)
     dts = sorted(x.strip().rstrip("/").replace("PRE ", "") for x in out.splitlines() if "dt=" in x)
     if not dts: raise SystemExit("нет выпусков Foursquare")
     dt = dts[-1]
