@@ -16,7 +16,7 @@ def run_overture():
     print("overture columns:", cols, flush=True)
     has_os = "operating_status" in cols
     has_basic = "basic_category" in cols
-    q = """SELECT names.primary AS name, to_json(names) AS names, categories.primary AS cat, to_json(categories.alternate) AS alt,
+    q = """SELECT names.primary AS name, to_json(names) AS names, taxonomy.primary AS cat, to_json(taxonomy.hierarchy) AS alt,
         {basic} AS basic, confidence, {status} AS status,
         ST_Y(ST_Centroid(geometry)) AS lat, ST_X(ST_Centroid(geometry)) AS lng,
         addresses[1].freeform AS addr, phones[1] AS phone, websites[1] AS web, to_json(sources) AS src
@@ -34,8 +34,9 @@ def run_overture():
 
 
 def run_fsq():
-    out = subprocess.run(["aws", "s3", "ls", "--no-sign-request", "s3://fsq-os-places-us-east-1/release/"], capture_output=True, text=True).stdout
-    print(out, flush=True)
+    pr = subprocess.run(["aws", "s3", "ls", "--no-sign-request", "--region", "us-east-1", "s3://fsq-os-places-us-east-1/release/"], capture_output=True, text=True)
+    out = pr.stdout
+    print(out, pr.stderr, flush=True)
     dts = sorted(x.strip().rstrip("/").replace("PRE ", "") for x in out.splitlines() if "dt=" in x)
     if not dts: raise SystemExit("нет выпусков Foursquare")
     dt = dts[-1]
