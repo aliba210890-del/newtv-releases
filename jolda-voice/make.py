@@ -2,7 +2,7 @@
 import asyncio, sys, edge_tts, os
 async def main():
     os.makedirs("out", exist_ok=True)
-    for lg in ["kk", "en"]:
+    for lg in ["kk", "en", "ru"]:
         rows = [l.rstrip("\n").split("\t") for l in open(f"jolda-voice/{lg}.tsv", encoding="utf-8") if l.strip()]
         voice = rows[0][1]
         for k, t in rows[1:]:
