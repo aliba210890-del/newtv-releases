@@ -115,6 +115,7 @@ def nkey(s):
 
 # --- открытые базы организаций: Overture Maps (Meta/Microsoft/…) и Foursquare OS Places ---
 OV_MAP = [
+    (r"^airport|airport_terminal|international_airport", "Аэропорт"),
     (r"preschool|day_care|child_care|kindergarten|nursery_school", "Детсад"), (r"housing_development|apartment_or_condo|residential_building|residential_complex", "ЖК"), (r"military|polling|home_private|assisted_living|plane|airport_gate|airport_lounge|airport_service|airport_tram|baggage|road$|intersection|bridge|tunnel|bus_line|^train$|moving_target", "-"), (r"language_school|driving_school|specialty_school|tutoring|educational_service|art_school|music_school|dance_studio|training", "Курсы"),
     (r"elementary_school|high_school|middle_school|^school|private_school|public_school|primary_and_secondary", "Школа"), (r"college_university|university", "Университет"),
     (r"fast_food|burger|pizza|sandwich|doner|kebab|hot_dog|food_truck|chicken_wings|fried_chicken", "Фастфуд"),
@@ -132,7 +133,7 @@ OV_MAP = [
     (r"store|shop|shopping|market|boutique|florist|flowers|optician|bookstore", "Магазин"),
     (r"mosque|church|religious|place_of_worship|temple|cathedral|synagogue", "Храм/мечеть"), (r"museum|gallery", "Музей"), (r"theat", "Театр"),
     (r"^park$|playground|botanical|zoo|garden$|dog_park", "Парк"), (r"government|embassy|consulate|police|post_office|courthouse|town_hall|public_service|social_service|community_center|library", "Госучреждение"),
-    (r"train_station|railway|bus_station|airport", "Вокзал"), (r"car_rental|parking", "Парковка"),
+    (r"airport|airfield|aerodrome", "Аэропорт"), (r"train_station|railway|bus_station", "Вокзал"), (r"car_rental|parking", "Парковка"),
 ]
 OV_MAP = [(re.compile(r), c) for r, c in OV_MAP]
 OV_OFFICE = re.compile(r"professional|real_estate|b2b|marketing|advertis|internet|software|it_service|consult|financial_advis|insurance|lawyer|legal|accountant|travel|tour_operator|agency|media|construction|contractor|home_developer|interior_design|cleaning|event_planning|photograph|printing|logistic|freight|recruit|employment|wedding|planning")
