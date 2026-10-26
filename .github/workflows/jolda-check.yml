@@ -1,0 +1,34 @@
+# Быстрая проверка живого сервера Jolda (без входа и без секретов): какие функции сейчас на сервере
+name: Jolda check
+on:
+  push:
+    branches: [main]
+    paths: [".github/workflows/jolda-check.yml", "jolda-deploy/check.trigger"]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      GH_TOKEN: ${{ github.token }}
+      R: ${{ github.repository }}
+    steps:
+      - name: Проверить сайт
+        run: |
+          B=https://jolda.aliba210890.workers.dev
+          {
+            echo "time: $(date -u)"
+            echo "partners: $(curl -s -o /dev/null -w '%{http_code}' "$B/partners?x=$RANDOM")"
+            P=$(curl -s "$B/partners?x=$RANDOM"); echo "partners-telephony: $(echo "$P" | grep -c 'Звонки клиентов')"
+            D=$(curl -s "$B/driver?x=$RANDOM"); echo "driver-myHead: $(echo "$D" | grep -c 'function myHead')"; echo "driver-navframe: $(echo "$D" | grep -c 'function frame(ts)')"
+            C=$(curl -s "$B/?x=$RANDOM"); echo "client-trSub: $(echo "$C" | grep -c 'function trSub')"; echo "client-wayLine: $(echo "$C" | grep -c 'wayLine')"
+            A=$(curl -s "$B/admin?x=$RANDOM"); echo "admin-miss: $(echo "$A" | grep -c 'Что искали и не нашли')"
+            O=$(curl -s "$B/offer?x=$RANDOM"); echo "offer-city-only: $(echo "$O" | grep -o 'г\. Астана' | head -1)"
+            echo "search-omarov: $(curl -s -G "$B/api/places" --data-urlencode 'q=Ильяса Омарова 23/1' | head -c 160)"
+            echo "search-pharmacy: $(curl -s -G "$B/api/places" --data-urlencode 'q=pharmacy' | head -c 120)"
+            echo "quote-zhibek: $(curl -s -XPOST "$B/api/quote" -H 'content-type: application/json' -d '{"from":{"lat":51.0811,"lng":71.7446},"to":{"lat":51.14002,"lng":71.36888}}' | head -c 400)"
+          } > jolda-check.txt
+          cat jolda-check.txt
+          gh release upload map jolda-check.txt -R "$R" --clobber
