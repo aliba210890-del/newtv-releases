@@ -34,22 +34,15 @@ def run_overture():
 
 
 def run_fsq():
-    pr = subprocess.run(["aws", "s3", "ls", "--no-sign-request", "--region", "us-east-1", "s3://fsq-os-places-us-east-1/release/"], capture_output=True, text=True)
-    out = pr.stdout
-    print(out, pr.stderr, flush=True)
-    if "dt=" not in out:
-        for cmd in (["aws", "s3", "ls", "--no-sign-request", "s3://fsq-os-places-us-east-1/"],
-                    ["aws", "s3", "ls", "--no-sign-request", "--endpoint-url", "https://data.source.coop", "s3://fused/fsq-os-places/"],
-                    ["aws", "s3", "ls", "--no-sign-request", "--endpoint-url", "https://data.source.coop", "s3://fused/fsq-os-places/2025-02-06/"],
-                    ["curl", "-sL", "https://data.source.coop/fused/fsq-os-places/README.md"]):
-            pr = subprocess.run(cmd, capture_output=True, text=True); print(" ".join(cmd), "\n", pr.stdout[:3000], pr.stderr[:500], flush=True)
-    dts = sorted(x.strip().rstrip("/").replace("PRE ", "") for x in out.splitlines() if "dt=" in x)
-    if not dts: raise SystemExit("нет выпусков Foursquare")
-    dt = dts[-1]
-    print("fsq release:", dt, flush=True)
+    # Foursquare убрал старые выпуски из своего бакета; последний публичный выпуск лежит на Source Cooperative
+    base = "s3://fused/fsq-os-places/"
+    ls = lambda p: subprocess.run(["aws", "s3", "ls", "--no-sign-request", "--endpoint-url", "https://data.source.coop", base + p], capture_output=True, text=True).stdout
+    dt = sorted(x.split()[-1].rstrip("/") for x in ls("").splitlines() if x.strip().startswith("PRE"))[-1]
+    lst = ls(dt + "/places/")
+    print("fsq release:", dt, "\n", lst[:1500], flush=True)
     con = duckdb.connect()
-    con.execute("INSTALL httpfs; LOAD httpfs; SET s3_region='us-east-1';")
-    src = "s3://fsq-os-places-us-east-1/release/%s/places/parquet/*.parquet" % dt
+    con.execute("INSTALL httpfs; LOAD httpfs; SET s3_endpoint='data.source.coop'; SET s3_url_style='path'; SET s3_region='us-west-2';")
+    src = base + dt + "/places/**/*.parquet"
     cols = [r[0] for r in con.execute("DESCRIBE SELECT * FROM read_parquet('%s') LIMIT 1" % src).fetchall()]
     print("fsq columns:", cols, flush=True)
     q = """SELECT name, latitude, longitude, address, locality, tel, website, date_created, date_refreshed, date_closed, to_json(fsq_category_labels) AS labels
