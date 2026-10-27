@@ -28,7 +28,9 @@ jobs:
           mkdir -p /tmp/out
           # описания фильмов из русской Википедии (найденное хранится в film_wiki.json)
           python3 playlists/wiki_plot.py /tmp/films_clean.m3u playlists/film_wiki.json || echo "::warning::Википедия недоступна — оставляю прежние описания"
-          python3 playlists/categorize.py /tmp/films_clean.m3u /tmp/out/films.m3u playlists/film_genres.json playlists/film_wiki.json
+          # постеры, рейтинг и жанры из TMDB (секрет TMDB_API_KEY; без него — как раньше), найденное хранится в film_tmdb.json
+          (cd playlists && TMDB_API_KEY="${{ secrets.TMDB_API_KEY }}" python3 tmdb.py /tmp/films_clean.m3u film_tmdb.json film_wiki.json /tmp/meta.json) || cp playlists/film_wiki.json /tmp/meta.json
+          python3 playlists/categorize.py /tmp/films_clean.m3u /tmp/out/films.m3u playlists/film_genres.json /tmp/meta.json
           python3 playlists/clean_playlist.py /tmp/tv.m3u /tmp/out/tv.m3u
 
       # Свой законный кинозал: полные фильмы с официальных YouTube-каналов правообладателей (секрет YOUTUBE_API_KEY)
@@ -53,5 +55,6 @@ jobs:
           git config user.email "newtv-bot@users.noreply.github.com"
           git add playlists/film_genres.json playlists/*.enc
           git add playlists/film_wiki.json 2>/dev/null || true
+          git add playlists/film_tmdb.json 2>/dev/null || true
           git add playlists/yt_cache.json 2>/dev/null || true
           git diff --cached --quiet || (git commit -m "Обновить плейлисты" && git pull --rebase && git push)

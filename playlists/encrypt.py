@@ -32,6 +32,10 @@ def main(src, dst, api=API):
     req = urllib.request.Request(api + "/api/pubkey", headers={"User-Agent": "newtv-playlist-bot"})
     with urllib.request.urlopen(req, timeout=30) as r:
         pk = json.load(r)
+    # защита: если источник вдруг отдал пустой или сильно урезанный список — оставляем прежний файл
+    if old.get("n") and n < old["n"] * 0.5 and not os.environ.get("FORCE_PLAYLIST"):
+        print(f"::warning::{dst}: в новом списке {n} записей вместо {old['n']} — оставляю прежний файл")
+        return
     if old.get("h") == h and old.get("kid") == pk["kid"]:
         print(dst, "без изменений")
         return
