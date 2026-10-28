@@ -345,6 +345,20 @@ def main(old_path, out_path):
         lst.append(p); keep[k] = p
     print("улицы: %d кусков → %d" % (sum(1 for p in pois.values() if p[1] == "Улица"), sum(1 for p in keep.values() if p[1] == "Улица")), flush=True)
     pois = keep
+    # один посёлок — одна точка: в OSM/Overture одно село часто лежит 2–3 раза (Осакаровка, Нура, Акколь, Жибек Жолы)
+    SET = ("Посёлок", "Город")
+    setl = sorted([(k, p) for k, p in pois.items() if p[1] in SET], key=lambda kp: -len(str(kp[1][8]) if len(kp[1]) > 8 else ""))
+    kept_set, drop = {}, set()
+    for k, p in setl:
+        lst = kept_set.setdefault(nkey(p[0]), [])
+        if any(math.hypot((q[2] - p[2]) * 111, (q[3] - p[3]) * 69) < 5 for q in lst): drop.add(k); continue
+        lst.append(p)
+    vill = {nkey(p[0]) for k, p in pois.items() if p[1] == "Посёлок" and k not in drop}
+    # «Здание» с именем посёлка и без адреса/телефона — это мусор (опоры, кошары, куски реки Нура), в поиске мешает найти само село
+    for k, p in pois.items():
+        if p[1] == "Здание" and nkey(p[0]) in vill and not any(str(x).strip() for x in p[4:8]) and math.hypot((p[2] - 51.128) * 111, (p[3] - 71.43) * 69) > 15: drop.add(k)
+    for k in drop: del pois[k]
+    print("посёлки-дубли и мусорные «здания» убраны: %d" % len(drop), flush=True)
     out = {"pois": list(pois.values()), "addr": list(addr.values()), "cams": old.get("cams", []), "license": "© OpenStreetMap contributors (ODbL); Overture Maps Foundation (CDLA-Permissive-2.0); Foursquare OS Places (Apache-2.0)", "built": time.strftime("%Y-%m-%d")}
     with gzip.open(out_path, "wt", encoding="utf-8") as f: json.dump(out, f, ensure_ascii=False, separators=(",", ":"))
     print("мест: %d → %d, адресов: %d → %d, ЖК: %d" % (n0p, len(pois), n0a, len(addr), sum(1 for p in pois.values() if p[1] == "ЖК")))
