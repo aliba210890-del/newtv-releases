@@ -31,6 +31,13 @@ jobs:
         run: |
           CF_API_TOKEN=$(printf %s "$CF_API_TOKEN" | tr -d '[:space:]"'"'"'' | sed 's/^Bearer//I')
           CF_ACCOUNT_ID=$(printf %s "$CF_ACCOUNT_ID" | tr -d '[:space:]')
+          if [ ${#CF_API_TOKEN} -gt 80 ]; then
+            # в секрет попал лишний текст (например, вся команда проверки) — достаём сам токен
+            T=$(printf %s "$CF_API_TOKEN" | grep -oiE 'bearer[^A-Za-z0-9_-]*[A-Za-z0-9_-]{30,}' | head -1 | sed -E 's/^bearer[^A-Za-z0-9_-]*//I')
+            [ -n "$T" ] || T=$(printf %s "$CF_API_TOKEN" | grep -oE '[A-Za-z0-9_-]{35,60}' | head -1)
+            echo "::notice::в секрете лишний текст (${#CF_API_TOKEN} символов), найден токен длиной ${#T}"
+            CF_API_TOKEN="$T"
+          fi
           echo "::notice::token length ${#CF_API_TOKEN}"
           test -n "$CF_API_TOKEN" || echo "::error::Нет секрета CF_API_TOKEN"
           test -n "$CF_ACCOUNT_ID" || echo "::error::Нет секрета CF_ACCOUNT_ID"
