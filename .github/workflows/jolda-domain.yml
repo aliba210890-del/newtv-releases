@@ -11,3 +11,6 @@ jobs:
             ns=$(dig +short NS $d | tr '\n' ' ')
             echo "::notice::$d => NS:[$ns] WHOIS:[$w]"
           done
+          for u in https://joldataxi.kz/ https://www.joldataxi.kz/ https://joldataxi.kz/partners https://joldataxi.kz/favicon.ico; do
+            echo "::notice::$u => $(curl -s -o /tmp/b -w '%{http_code}' -m 20 $u) $(head -c 120 /tmp/b | tr -d '\n' | grep -o '<title>[^<]*' )"
+          done
