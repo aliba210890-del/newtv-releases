@@ -92,8 +92,8 @@ a { color: inherit; }
 .devs__tv .devs__bz { padding: 1cqw; border-radius: 1.8cqw; }
 .devs__tab .devs__bz { padding: 1.1cqw; border-radius: 2.6cqw; }
 .devs__ph .devs__bz { padding: .75cqw; border-radius: 3.4cqw; }
-.devs img { display: block; width: 100%; height: auto; background: #0a1230; }
-.devs__tv img { aspect-ratio: 16/9; object-fit: cover; border-radius: 1cqw; }
+.devs img, .devs video { display: block; width: 100%; height: auto; background: #0a1230; }
+.devs__tv img, .devs__tv video { aspect-ratio: 16/9; object-fit: cover; border-radius: 1cqw; }
 .devs__tab img { aspect-ratio: 16/9; object-fit: cover; border-radius: 1.7cqw; }
 .devs__ph img { aspect-ratio: 20/9; object-fit: cover; border-radius: 2.7cqw; background: #000; }
 .devs__stand { display: block; width: 22%; height: 2.6cqw; margin: 0 auto; background: linear-gradient(#242c50, #0b1024); clip-path: polygon(14% 0, 86% 0, 100% 100%, 0 100%); }
@@ -270,7 +270,7 @@ details.more[open] summary::after { transform: rotate(-135deg); }
         </div>
       </div>
       <div class="devs" role="img" aria-label="Приложение New TV на телевизоре, планшете и телефоне">
-        <div class="devs__tv"><div class="devs__bz"><img src="tv-kino.jpg" width="2560" height="1440" alt="" fetchpriority="high"></div><span class="devs__stand" aria-hidden="true"></span></div>
+        <div class="devs__tv"><div class="devs__bz"><video src="kinozal.mp4" poster="tv-kino.jpg" width="1280" height="720" autoplay muted loop playsinline preload="auto" aria-label="Кинозал New TV на телевизоре"></video></div><span class="devs__stand" aria-hidden="true"></span></div>
         <div class="devs__tab"><div class="devs__bz"><img src="tab-kino.jpg" width="1600" height="900" alt=""></div></div>
         <div class="devs__ph"><div class="devs__bz"><img src="app-phone-ch.jpg" width="1600" height="720" alt=""></div></div>
       </div>
