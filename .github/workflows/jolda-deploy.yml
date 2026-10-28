@@ -29,6 +29,9 @@ jobs:
           CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
           CF_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
         run: |
+          CF_API_TOKEN=$(printf %s "$CF_API_TOKEN" | tr -d '[:space:]"'"'"'' | sed 's/^Bearer//I')
+          CF_ACCOUNT_ID=$(printf %s "$CF_ACCOUNT_ID" | tr -d '[:space:]')
+          echo "::notice::token length ${#CF_API_TOKEN}"
           test -n "$CF_API_TOKEN" || echo "::error::Нет секрета CF_API_TOKEN"
           test -n "$CF_ACCOUNT_ID" || echo "::error::Нет секрета CF_ACCOUNT_ID"
           test -n "$CF_API_TOKEN" && test -n "$CF_ACCOUNT_ID" || exit 1
