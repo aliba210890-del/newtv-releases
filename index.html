@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#070d22">
 <title>New TV — русское и мировое ТВ за границей: 4 000 каналов, архив, 4K</title>
-<meta name="description" content="New TV: телевидение России, Казахстана, Украины, Германии и ещё 37 стран в любой точке мира. 4 000 каналов, архив до 7 дней, кинозал, 4K. От 2 до 5 устройств на одну подписку. Бесплатный тест.">
+<meta name="description" content="New TV: телевидение России, Казахстана, Украины, Германии и ещё 37 стран в любой точке мира. 4 000 каналов, архив до 7 дней, кинозал, 4K. 2 устройства на одну подписку. Бесплатный тест.">
 <link rel="icon" type="image/png" href="favicon.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="canonical" href="https://newtvglobal.online/">
@@ -282,7 +282,7 @@ details.more[open] summary::after { transform: rotate(-135deg); }
       <div class="fact"><b>4 100+</b><span>каналов в списке</span></div>
       <div class="fact"><b>41 страны</b><span>каналы на разных языках</span></div>
       <div class="fact"><b>5 дней</b><span>архив передач</span></div>
-      <div class="fact"><b>до 5</b><span>устройств одновременно</span></div>
+      <div class="fact"><b>2</b><span>устройства одновременно</span></div>
     </div>
   </div>
 
@@ -384,15 +384,14 @@ details.more[open] summary::after { transform: rotate(-135deg); }
         <a class="btn btn--primary" href="#lead" data-need="trial">Попробовать бесплатно</a>
       </div>
       <div class="plans plans--one">
-        <article class="plan plan--hot"><span class="plan__tag">Годовая подписка</span><h3>Все каналы, кинозал и архив</h3><p class="plan__price"><span id="pl-price">106 €</span><small>в год<br><span id="pl-dev">2 устройства одновременно</span></small></p><div class="devstep" role="group" aria-label="Количество устройств"><button type="button" id="pl-minus" aria-label="Меньше устройств">−</button><output id="pl-n">2</output><button type="button" id="pl-plus" aria-label="Больше устройств">+</button><span>устройства<br>одновременно</span></div><p class="plan__more">Нужно больше устройств? До 5 на одну подписку.</p><a class="btn btn--primary" href="#lead" data-need="2" id="pl-go">Подключить</a></article>
+        <article class="plan plan--hot"><span class="plan__tag">Годовая подписка</span><h3>Все каналы, кинозал и архив</h3><p class="plan__price"><span id="pl-price">106 €</span><small>в год<br><span id="pl-dev">2 устройства одновременно</span></small></p><a class="btn btn--primary" href="#lead" data-need="2" id="pl-go">Подключить</a></article>
         <div class="ipnote">
-          <h3>Цены за год</h3>
-          <ul class="ticks"><li><b>2 устройства</b> — 106 €</li><li><b>3 устройства</b> — 120 €</li><li><b>4 устройства</b> — 125 €</li><li><b>5 устройств</b> — 130 €</li></ul>
-          <p style="margin-top:14px">Во всех тарифах одинаково: 4 000 каналов 41 страны, кинозал, архив до 7 дней и программа передач.</p>
+          <h3>Что входит в 106 €</h3>
+          <ul class="ticks"><li><b>2 устройства</b> одновременно</li><li><b>4 000 каналов</b> 41 страны</li><li><b>Архив до 7 дней</b> и программа передач</li><li><b>Кинозал</b> с фильмами и сериалами</li></ul>
         </div>
 
       </div>
-      <p class="incl">В каждый тариф входят все каналы, кинозал, архив, программа передач и помощь с подключением.</p>
+      <p class="incl">В подписку входят все каналы, кинозал, архив, программа передач и помощь с подключением.</p>
     </div>
   </section>
 
@@ -437,9 +436,6 @@ details.more[open] summary::after { transform: rotate(-135deg); }
             <select id="f-need">
               <option value="trial">Бесплатный тест</option>
               <option value="2">2 устройства, 106 € в год</option>
-              <option value="3">3 устройства, 120 € в год</option>
-              <option value="4">4 устройства, 125 € в год</option>
-              <option value="5">5 устройств, 130 € в год</option>
               <option value="q">Вопрос</option>
             </select>
           </label>
@@ -532,6 +528,7 @@ details.more[open] summary::after { transform: rotate(-135deg); }
   /* ---------- Plan devices ---------- */
   (function () {
     var n = 2, PRICE = {2: 106, 3: 120, 4: 125, 5: 130}, m = $("pl-minus"), p = $("pl-plus");
+    if (!m || !p) return;
     function word(k) { return k < 5 ? "устройства" : "устройств"; }
     function draw() {
       $("pl-n").textContent = n;
