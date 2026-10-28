@@ -25,6 +25,8 @@ jobs:
             D=$(curl -s "$B/driver?x=$RANDOM"); echo "driver-myHead: $(echo "$D" | grep -c 'function myHead')"; echo "driver-navframe: $(echo "$D" | grep -c 'function frame(ts)')"
             C=$(curl -s "$B/?x=$RANDOM"); echo "client-trSub: $(echo "$C" | grep -c 'function trSub')"; echo "client-wayLine: $(echo "$C" | grep -c 'wayLine')"
             A=$(curl -s "$B/admin?x=$RANDOM"); echo "admin-miss: $(echo "$A" | grep -c 'Что искали и не нашли')"
+            echo "search-mkr: $(curl -s -G "$B/api/places" --data-urlencode 'q=4 мкр' -d lat=51.08 -d lng=71.74 | head -c 140)"
+            for i in 1 2 3 4 5; do echo "search-$i: $(curl -s -o /dev/null -w '%{http_code}' -G "$B/api/places" --data-urlencode "q=абая $i")"; done
             echo "client-resume: $(echo "$C" | grep -c 'let hiddenAt = 0')"; echo "client-freshfix: $(echo "$C" | grep -c 'maximumAge: 60000')"; echo "driver-resume: $(echo "$D" | grep -c 'S.gpsWatch = navigator')"
             O=$(curl -s "$B/offer?x=$RANDOM"); echo "offer-city-only: $(echo "$O" | grep -o 'г\. Астана' | head -1)"
             echo "search-omarov: $(curl -s -G "$B/api/places" --data-urlencode 'q=Ильяса Омарова 23/1' | head -c 160)"
