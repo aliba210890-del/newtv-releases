@@ -19,8 +19,10 @@ jobs:
         env:
           JOLDA_KEY: ${{ secrets.JOLDA_KEY }}
         run: |
-          test -n "$JOLDA_KEY" || { echo "Нет секрета JOLDA_KEY"; exit 1; }
-          openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 -pass env:JOLDA_KEY -in jolda-deploy/worker.js.enc -out worker.js
+          [ -n "${{ secrets.CF_API_TOKEN }}" ] || echo "::error::Нет секрета CF_API_TOKEN"
+          [ -n "${{ secrets.CF_ACCOUNT_ID }}" ] || echo "::error::Нет секрета CF_ACCOUNT_ID"
+          test -n "$JOLDA_KEY" || { echo "::error::Нет секрета JOLDA_KEY"; exit 1; }
+          openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 -pass env:JOLDA_KEY -in jolda-deploy/worker.js.enc -out worker.js || { echo "::error::JOLDA_KEY неверный"; exit 1; }
           ls -la worker.js
       - name: Обновить код воркера jolda
         env:
