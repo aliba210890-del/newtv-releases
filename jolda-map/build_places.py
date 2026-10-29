@@ -45,8 +45,9 @@ def load_streets(path):
                         grid.setdefault((int(y * 500), int(x * 300)), []).append((x1, y1, x2, y2, t["name"]))
     except Exception as e: print("улицы:", e, flush=True)
     return grid
-def nearest_street(grid, la, ln, maxm=70):
-    a, b = int(la * 500), int(ln * 300); best = None; bd = maxm
+def nearest_street(grid, la, ln, maxm=70, strict=False):
+    # strict: улица рядом (до 30 м), а другая улица заметно дальше — иначе не угадываем
+    a, b = int(la * 500), int(ln * 300); best = None; bd = maxm; dist = {}
     kx = 111.32 * math.cos(math.radians(la)) * 1000; ky = 110.57 * 1000
     for i in (-1, 0, 1):
         for j in (-1, 0, 1):
@@ -55,7 +56,11 @@ def nearest_street(grid, la, ln, maxm=70):
                 dx, dy = bx - ax, by - ay; L = dx * dx + dy * dy
                 tt = 0 if L == 0 else max(0, min(1, -(ax * dx + ay * dy) / L))
                 d = math.hypot(ax + tt * dx, ay + tt * dy)
+                if d < dist.get(nm, 1e9): dist[nm] = d
                 if d < bd: bd = d; best = nm
+    if strict and best:
+        d2 = min([v for k, v in dist.items() if nkey(k) != nkey(best)] or [1e9])
+        if bd > 30 or d2 < bd * 2.5: return None
     return best
 
 def ll(e):
@@ -135,6 +140,8 @@ STRONG = [(re.compile(r, re.I), c) for r, c in [
     (r"^(школа|сш|сош|мектеп|школа.?гимназия|гимназия|лицей)\b|^№?\s?\d+\s?(мектеп|школа)", "Школа"),
     (r"^(аптека|дәріхана)", "Аптека"), (r"^(стоматолог|дентал)", "Стоматология"), (r"^(больница|детская .*больница|городская больница|аурухана|госпиталь)", "Больница"),
     (r"ветеринар|ветклиник|вет\.?\s?клиник|ветаптек|зооклиник|vet\s?clinic|veterinar", "Ветклиника"),
+    (r"^(снт|сот|с/т|дпк|дск|садоводческ|дачн\w*|саяжай|бау-бақша)\b|садоводческое товарищество|дачный (массив|кооператив|посёлок|поселок)|\bсаяжайы\b", "Дачи"),
+    (r"кладбищ|зираты\b|\bзират\b|мазар", "Кладбище"), (r"^(база|зона) отдыха|демалыс (аймағы|орны)|\bпляж\b", "Зона отдыха"),
     (r"^(поликлиника|емхана)", "Клиника"), (r"^(магазин|супермаркет|минимаркет|дүкен)\b", "Магазин"), (r"^(кафе|кофейня)\b", "Кафе"), (r"^(ресторан|мейрамхана)\b", "Ресторан"),
     (r"^(мечеть|мешіт)", "Храм/мечеть"), (r"^(азс)\b", "АЗС"), (r"^(трц|тц|торгов\w* центр)\b", "ТРЦ"), (r"^(бизнес.?центр|бц)\b", "Бизнес-центр")]]
 def cat_by_name(name, cur):
@@ -301,6 +308,7 @@ def merge_extra(pois, addr=None):
         g = geocode(x.get("addr"), aidx, (x["lat"], x["lng"], 25 if shared else 6))
         if g: x["lat"], x["lng"] = g; geo["по адресу"] += 1
         elif pin[(round(x["lat"], 4), round(x["lng"], 4))] >= 4 and conf < 0.9: skipped["общая точка"] += 1; continue
+        if c is None: c = next((cc for rx, cc in STRONG if cc in ("Дачи", "Кладбище", "Зона отдыха") and rx.search(name)), None)
         if c is None or c == "-": skipped["без категории"] += 1; continue
         if c == "Офис" and (conf < 0.75 or not g): skipped["офис"] += 1; continue
         if conf < (0.3 if g else 0.45 if x.get("addr") else 0.6): skipped["низкое доверие"] += 1; continue
@@ -327,6 +335,7 @@ def merge_extra(pois, addr=None):
         g = geocode(x.get("addr"), aidx, (x["lat"], x["lng"], 25 if shared else 6))
         if g: x["lat"], x["lng"] = g; geo["fsq по адресу"] += 1
         elif pin[(round(x["lat"], 4), round(x["lng"], 4))] >= 4: skipped["fsq общая точка"] += 1; continue
+        if c is None: c = next((cc for rx, cc in STRONG if cc in ("Дачи", "Кладбище", "Зона отдыха") and rx.search(name)), None)
         if c is None or c in ("Офис", "-"): skipped["fsq без категории/офис"] += 1; continue
         # школы, садики, больницы, мечети, ТРЦ не закрываются годами — берём и старые записи; кафе и магазины — только свежие
         if (x.get("refreshed") or "")[:4] < "2020" and c not in STABLE: skipped["fsq устарело"] += 1; continue
@@ -426,7 +435,7 @@ def main(old_path, out_path):
         elif pois[k][1] in ("Здание", "Офис") and c not in ("Здание", "Офис"): pois[k][1] = c
     # адреса: «улица + дом»; в сёлах часто «посёлок + дом» (addr:place) или только номер дома — тогда берём ближайшую улицу
     segs = load_streets(EXPORT)
-    na = {"улица": 0, "посёлок": 0, "ближайшая улица": 0}
+    na = {"улица": 0, "посёлок": 0, "ближайшая улица": 0}; guess = []
     for e in allels:
         t = e.get("tags", {}); hn = t.get("addr:housenumber")
         if not hn: continue
@@ -435,7 +444,7 @@ def main(old_path, out_path):
         st = t.get("addr:street") or ""
         kind = "улица"
         if not st and t.get("addr:place"): st = t["addr:place"]; kind = "посёлок"
-        if not st: st = nearest_street(segs, la, ln) or ""; kind = "ближайшая улица"
+        if not st: guess.append((e, la, ln, hn)); continue
         if not st or BAD_STREET.search(st): continue
         a = [st, hn, round(la, 5), round(ln, 5)]
         k = (a[0].lower(), str(a[1]).lower(), round(la, 4), round(ln, 4))
@@ -449,7 +458,25 @@ def main(old_path, out_path):
         la, ln = ll(e); g = nearest_street(segs, la, ln)
         if not g: continue
         tot += 1; ok += (street_core(g) and street_core(g)[0] in street_core(e["tags"]["addr:street"])) or nkey(g) == nkey(e["tags"]["addr:street"])
-    print("ближайшая улица угадана: %d из %d (%.0f%%)" % (ok, tot, 100 * ok / max(tot, 1)), flush=True)
+    print("ближайшая улица (просто ближайшая) угадана: %d из %d (%.0f%%)" % (ok, tot, 100 * ok / max(tot, 1)), flush=True)
+    ok = tot = 0
+    for e in smp:
+        la, ln = ll(e); g = nearest_street(segs, la, ln, strict=True)
+        if not g: continue
+        tot += 1; ok += (street_core(g) and street_core(g)[0] in street_core(e["tags"]["addr:street"])) or nkey(g) == nkey(e["tags"]["addr:street"])
+    acc = ok / max(tot, 1)
+    print("ближайшая улица (строго) угадана: %d из %d (%.0f%%), охват %d из %d" % (ok, tot, 100 * acc, tot, len(smp)), flush=True)
+    # дома без улицы: берём угаданную улицу только если строгое правило точно (≥ 92%); прежние неточные догадки убираем
+    for e, la, ln, hn in guess:
+        loose = nearest_street(segs, la, ln)
+        if loose:
+            k0 = (loose.lower(), str(hn).lower(), round(la, 4), round(ln, 4))
+            addr.pop(k0, None)
+        g = nearest_street(segs, la, ln, strict=True) if acc >= 0.92 else None
+        if g and not BAD_STREET.search(g):
+            a = [g, hn, round(la, 5), round(ln, 5)]
+            addr[(g.lower(), str(hn).lower(), round(la, 4), round(ln, 4))] = a; na["ближайшая улица"] += 1
+    print("дома без улицы, улица угадана:", na["ближайшая улица"], "из", len(guess), flush=True)
     for k in [k for k, a in addr.items() if BAD_STREET.search(str(a[0]))]: del addr[k]
     # места, которых нет в OpenStreetMap, — добавляем вручную (jolda-map/extra_places.json)
     try:
