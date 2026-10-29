@@ -42,16 +42,24 @@ def load_streets(path):
                 c = g["coordinates"]
                 for (x1, y1), (x2, y2) in zip(c, c[1:]):
                     for (x, y) in ((x1, y1), ((x1 + x2) / 2, (y1 + y2) / 2), (x2, y2)):
-                        grid.setdefault((int(y * 500), int(x * 300)), []).append((x1, y1, x2, y2, t["name"]))
+                        grid.setdefault((int(y * 500), int(x * 300)), []).append((x1, y1, x2, y2, t["name"], " ".join(t.get(k, "") for k in ("name:ru", "name:kk", "old_name", "alt_name", "official_name"))))
     except Exception as e: print("улицы:", e, flush=True)
     return grid
+def same_street(a, b):
+    ca, cb = street_core(a), street_core(b)
+    for x in ca:
+        for y in cb:
+            p = 0
+            while p < min(len(x), len(y)) and x[p] == y[p]: p += 1
+            if p >= 4 or (p >= 3 and min(len(x), len(y)) <= 4) or x == y: return True
+    return False
 def nearest_street(grid, la, ln, maxm=70, strict=False):
     # strict: улица рядом (до 30 м), а другая улица заметно дальше — иначе не угадываем
     a, b = int(la * 500), int(ln * 300); best = None; bd = maxm; dist = {}
     kx = 111.32 * math.cos(math.radians(la)) * 1000; ky = 110.57 * 1000
     for i in (-1, 0, 1):
         for j in (-1, 0, 1):
-            for (x1, y1, x2, y2, nm) in grid.get((a + i, b + j), []):
+            for (x1, y1, x2, y2, nm, _alt) in grid.get((a + i, b + j), []):
                 ax, ay, bx, by = (x1 - ln) * kx, (y1 - la) * ky, (x2 - ln) * kx, (y2 - la) * ky
                 dx, dy = bx - ax, by - ay; L = dx * dx + dy * dy
                 tt = 0 if L == 0 else max(0, min(1, -(ax * dx + ay * dy) / L))
@@ -59,7 +67,7 @@ def nearest_street(grid, la, ln, maxm=70, strict=False):
                 if d < dist.get(nm, 1e9): dist[nm] = d
                 if d < bd: bd = d; best = nm
     if strict and best:
-        d2 = min([v for k, v in dist.items() if nkey(k) != nkey(best)] or [1e9])
+        d2 = min([v for k, v in dist.items() if not same_street(k, best)] or [1e9])
         if bd > 30 or d2 < bd * 2.5: return None
     return best
 
@@ -457,13 +465,13 @@ def main(old_path, out_path):
     for e in smp:
         la, ln = ll(e); g = nearest_street(segs, la, ln)
         if not g: continue
-        tot += 1; ok += (street_core(g) and street_core(g)[0] in street_core(e["tags"]["addr:street"])) or nkey(g) == nkey(e["tags"]["addr:street"])
+        tot += 1; ok += same_street(g, e["tags"]["addr:street"])
     print("ближайшая улица (просто ближайшая) угадана: %d из %d (%.0f%%)" % (ok, tot, 100 * ok / max(tot, 1)), flush=True)
     ok = tot = 0
     for e in smp:
         la, ln = ll(e); g = nearest_street(segs, la, ln, strict=True)
         if not g: continue
-        tot += 1; ok += (street_core(g) and street_core(g)[0] in street_core(e["tags"]["addr:street"])) or nkey(g) == nkey(e["tags"]["addr:street"])
+        tot += 1; ok += same_street(g, e["tags"]["addr:street"])
     acc = ok / max(tot, 1)
     print("ближайшая улица (строго) угадана: %d из %d (%.0f%%), охват %d из %d" % (ok, tot, 100 * acc, tot, len(smp)), flush=True)
     # дома без улицы: берём угаданную улицу только если строгое правило точно (≥ 92%); прежние неточные догадки убираем
