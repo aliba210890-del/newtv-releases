@@ -1,0 +1,25 @@
+# Разбор видео тестовой поездки: кадры зашифрованы ключом JOLDA_KEY, хранятся 1 день как артефакт (не в открытом релизе)
+name: Jolda video frames
+on:
+  workflow_dispatch:
+    inputs:
+      id: { description: "Google Drive file id", required: true }
+      name: { description: "label", required: true }
+jobs:
+  frames:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - run: |
+          pip install -q gdown
+          gdown --fuzzy "https://drive.google.com/file/d/${{ inputs.id }}/view" -O v.mp4
+          ls -la v.mp4
+          sudo apt-get install -y -qq ffmpeg >/dev/null
+          D=$(ffprobe -v error -show_entries format=duration -of csv=p=0 v.mp4); echo "dur $D"
+          mkdir f; ffmpeg -loglevel error -i v.mp4 -vf "fps=1/2,scale=480:-2" -q:v 6 f/%04d.jpg
+          ffmpeg -loglevel error -i v.mp4 -vn -ac 1 -ar 16000 -b:a 24k f/audio.mp3 || true
+          echo "$D" > f/duration.txt; ls f | wc -l
+          tar czf f.tgz f && openssl enc -aes-256-cbc -pbkdf2 -iter 200000 -pass env:K -in f.tgz -out f.enc && ls -la f.enc
+        env: { K: "${{ secrets.JOLDA_KEY }}" }
+      - uses: actions/upload-artifact@v4
+        with: { name: "frames-${{ inputs.name }}", path: f.enc, retention-days: 1 }
