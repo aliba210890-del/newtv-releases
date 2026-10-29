@@ -5,6 +5,8 @@ on:
     inputs:
       id: { description: "Google Drive file id", required: true }
       name: { description: "label", required: true }
+permissions:
+  contents: write
 jobs:
   frames:
     runs-on: ubuntu-latest
@@ -21,5 +23,6 @@ jobs:
           echo "$D" > f/duration.txt; ls f | wc -l
           tar czf f.tgz f && openssl enc -aes-256-cbc -pbkdf2 -iter 200000 -pass env:K -in f.tgz -out f.enc && ls -la f.enc
         env: { K: "${{ secrets.JOLDA_KEY }}" }
-      - uses: actions/upload-artifact@v4
-        with: { name: "frames-${{ inputs.name }}", path: f.enc, retention-days: 1 }
+      - name: Зашифрованный файл в релиз map (открыть можно только ключом)
+        env: { GH_TOKEN: "${{ github.token }}" }
+        run: cp f.enc "vid-${{ inputs.name }}.enc" && gh release upload map "vid-${{ inputs.name }}.enc" -R ${{ github.repository }} --clobber
