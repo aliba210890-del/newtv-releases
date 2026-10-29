@@ -17,4 +17,5 @@ jobs:
           for q in "SELECT 1 AS ok" "SELECT COUNT(*) n FROM orders" "SELECT COUNT(*) n FROM sqlite_master"; do
             echo "::notice::$q => $(curl -s -X POST "$U/d1/database/$ID/query" -H "$H" -H 'content-type: application/json' -d "{\"sql\":\"$q\"}" | head -c 400)"
           done
-          echo "::notice::site $(curl -s 'https://joldataxi.kz/api/config' | head -c 200)"
+          echo "::notice::site $(curl -s https://joldataxi.kz/api/config | head -c 200)"
+          echo "::notice::diag $(curl -s https://joldataxi.kz/diag-db | head -c 900)"
