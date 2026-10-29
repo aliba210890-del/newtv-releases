@@ -26,6 +26,38 @@ def load_export(path):
             out.append({"lat": lat, "lon": lon, "tags": ft.get("properties") or {}})
     return out
 
+BAD_STREET = re.compile(r"[<>]|различн|unknown|без названия|^\W*$|^\d+$", re.I)
+def load_streets(path):
+    # линии улиц с названием → короткие отрезки в сетке ~200 м (для «дом без улицы»)
+    grid = {}
+    try:
+        with open(path, encoding="utf-8") as f:
+            for line in f:
+                line = line.strip().lstrip("\x1e")
+                if '"highway"' not in line or '"name"' not in line: continue
+                try: ft = json.loads(line)
+                except Exception: continue
+                t = ft.get("properties") or {}; g = ft.get("geometry") or {}
+                if g.get("type") != "LineString" or not t.get("name") or t.get("highway") in ("footway", "path", "cycleway", "steps", "track", "service"): continue
+                c = g["coordinates"]
+                for (x1, y1), (x2, y2) in zip(c, c[1:]):
+                    for (x, y) in ((x1, y1), ((x1 + x2) / 2, (y1 + y2) / 2), (x2, y2)):
+                        grid.setdefault((int(y * 500), int(x * 300)), []).append((x1, y1, x2, y2, t["name"]))
+    except Exception as e: print("улицы:", e, flush=True)
+    return grid
+def nearest_street(grid, la, ln, maxm=70):
+    a, b = int(la * 500), int(ln * 300); best = None; bd = maxm
+    kx = 111.32 * math.cos(math.radians(la)) * 1000; ky = 110.57 * 1000
+    for i in (-1, 0, 1):
+        for j in (-1, 0, 1):
+            for (x1, y1, x2, y2, nm) in grid.get((a + i, b + j), []):
+                ax, ay, bx, by = (x1 - ln) * kx, (y1 - la) * ky, (x2 - ln) * kx, (y2 - la) * ky
+                dx, dy = bx - ax, by - ay; L = dx * dx + dy * dy
+                tt = 0 if L == 0 else max(0, min(1, -(ax * dx + ay * dy) / L))
+                d = math.hypot(ax + tt * dx, ay + tt * dy)
+                if d < bd: bd = d; best = nm
+    return best
+
 def ll(e):
     if "lat" in e: return e["lat"], e["lon"]
     c = e.get("center") or {}
@@ -61,6 +93,14 @@ CAT = [
     (lambda t: t.get("building") in ("kindergarten",), "Детсад"), (lambda t: t.get("building") in ("school",), "Школа"),
     (lambda t: t.get("building") in ("hospital",), "Больница"), (lambda t: t.get("building") in ("retail", "supermarket", "kiosk"), "Магазин"),
     (lambda t: t.get("building") in ("mosque", "church", "cathedral", "religious"), "Храм/мечеть"), (lambda t: t.get("building") in ("university", "college"), "Университет"),
+    (lambda t: t.get("amenity") == "veterinary", "Ветклиника"),
+    (lambda t: t.get("landuse") == "allotments" or t.get("place") == "allotments" or t.get("garden:type") == "allotments", "Дачи"),
+    (lambda t: t.get("landuse") == "cemetery" or t.get("amenity") == "grave_yard", "Кладбище"),
+    (lambda t: t.get("natural") == "water" or t.get("water") in ("lake", "reservoir", "pond") or t.get("natural") == "lake", "Озеро"),
+    (lambda t: t.get("leisure") in ("resort", "beach_resort") or t.get("natural") == "beach" or t.get("tourism") in ("camp_site", "chalet"), "Зона отдыха"),
+    (lambda t: t.get("landuse") == "industrial" or t.get("industrial"), "Промзона"),
+    (lambda t: t.get("place") in ("locality", "farm"), "Местность"),
+    (lambda t: t.get("amenity") == "driving_school", "Курсы"), (lambda t: t.get("amenity") == "parking", "Парковка"),
     (lambda t: t.get("amenity") or t.get("leisure") or t.get("tourism") or t.get("craft") or t.get("building"), "Здание"),
 ]
 def cat(t):
@@ -94,6 +134,7 @@ STRONG = [(re.compile(r, re.I), c) for r, c in [
     (r"^(я?сли.?сад|детск\w* сад|д/с|садик|балабақша|бөбекжай|мини.?центр|kindergarten)", "Детсад"),
     (r"^(школа|сш|сош|мектеп|школа.?гимназия|гимназия|лицей)\b|^№?\s?\d+\s?(мектеп|школа)", "Школа"),
     (r"^(аптека|дәріхана)", "Аптека"), (r"^(стоматолог|дентал)", "Стоматология"), (r"^(больница|детская .*больница|городская больница|аурухана|госпиталь)", "Больница"),
+    (r"ветеринар|ветклиник|вет\.?\s?клиник|ветаптек|зооклиник|vet\s?clinic|veterinar", "Ветклиника"),
     (r"^(поликлиника|емхана)", "Клиника"), (r"^(магазин|супермаркет|минимаркет|дүкен)\b", "Магазин"), (r"^(кафе|кофейня)\b", "Кафе"), (r"^(ресторан|мейрамхана)\b", "Ресторан"),
     (r"^(мечеть|мешіт)", "Храм/мечеть"), (r"^(азс)\b", "АЗС"), (r"^(трц|тц|торгов\w* центр)\b", "ТРЦ"), (r"^(бизнес.?центр|бц)\b", "Бизнес-центр")]]
 def cat_by_name(name, cur):
@@ -126,6 +167,7 @@ OV_MAP = [
     (r"lounge|hookah|pub|^bar|_bar|beer|wine_bar|cocktail", "Бар"), (r"karaoke|night_club|nightclub|music_venue|bowling|arcade|amusement|escape|trampoline|water_park|cinema|movie|entertainment|event_venue|banquet", "Развлечения"),
     (r"hotel|lodging|hostel|motel|guest_house|resort|inn$|apartment_rental|holiday_rental", "Отель"),
     (r"hospital|maternity", "Больница"), (r"dent|orthodont", "Стоматология"), (r"pharmacy|drugstore", "Аптека"),
+    (r"veterin|animal_hospital|animal_clinic|pet_clinic", "Ветклиника"),
     (r"clinic|doctor|medical|health_care|outpatient|laboratory|diagnostic|physical_therap|optometr|veterin|ophthalm|pediatr|gynec|urgent_care", "Клиника"),
     (r"beauty|barber|hair|nail|spa$|^spa|massage|cosmetic|eyelash|tattoo|waxing|skin_care|makeup", "Салон красоты"),
     (r"gym|fitness|yoga|pilates|sport|martial|boxing|swimming|stadium|arena|ice_skating|tennis|football|golf", "Спорткомплекс"),
@@ -294,6 +336,69 @@ def merge_extra(pois, addr=None):
     print("добавлено из открытых баз:", sum(added.values()), dict(added.most_common()), flush=True)
     print("пропущено:", dict(skipped), "координаты уточнены:", dict(geo), flush=True)
 
+WD_SETTL = re.compile(r"сел|посёл|посел|аул|деревн|город|станция|населённ|населенн|хутор|разъезд|зимовк|village|settlement|town", re.I)
+WD_CAT = [(re.compile(r, re.I), c) for r, c in [(r"озеро|водохранилищ|пруд", "Озеро"), (r"мечеть", "Храм/мечеть"), (r"церк|собор|храм", "Храм/мечеть"), (r"школ|гимназ|лице", "Школа"),
+          (r"университет|институт|академи", "Университет"), (r"колледж", "Колледж"), (r"больниц|госпитал", "Больница"), (r"музей", "Музей"), (r"театр", "Театр"), (r"стадион|арена|спортивн", "Спорткомплекс"),
+          (r"парк", "Парк"), (r"памятник|монумент|скульптур|мемориал|достопримечат", "Достопримечательность"), (r"аэропорт", "Аэропорт"), (r"железнодорожн.*станц|вокзал", "Вокзал"),
+          (r"торгов|молл", "ТРЦ"), (r"гостиниц|отель", "Отель"), (r"кладбищ", "Кладбище")]]
+def merge_wikidata(pois):
+    import os
+    fn = "wikidata.ndjson"
+    if not os.path.exists(fn): print("wikidata: нет файла", flush=True); return
+    items = [json.loads(l) for l in open(fn, encoding="utf-8") if l.strip()]
+    sett = [p for p in pois.values() if p[1] in ("Посёлок", "Город")]
+    def same(a, b):
+        a, b = nkey(a).translate(KZT), nkey(b).translate(KZT)
+        return a == b or (len(a) >= 4 and len(b) >= 4 and (a.startswith(b) or b.startswith(a)))
+    added = {"посёлки": 0, "прежние названия": 0, "места": 0}
+    for x in items:
+        names = [n for n in [x["ru"], x["kk"], x["en"], *x["alts"]] if n and not re.match(r"^Q\d+$", n)]
+        if not names: continue
+        types = " ".join(x["types"])
+        main_name = x["ru"] or x["kk"] or x["en"]
+        if WD_SETTL.search(types) and not re.search(r"район|область|округ|сельский округ|административн", types, re.I):
+            near = [p for p in sett if math.hypot((p[2] - x["lat"]) * 111, (p[3] - x["lng"]) * 69) < 4]
+            hit = [p for p in near if any(same(p[0], n) or (len(p) > 8 and any(same(w, n) for w in [p[8]])) for n in names)]
+            if not hit and near and any(same(near[0][0], n) for n in names): hit = near[:1]
+            if hit:
+                p = hit[0]
+                while len(p) < 9: p.append("")
+                extra = [n for n in names if nkey(n) not in nkey(p[0] + " " + p[8])]
+                if extra: p[8] = (p[8] + " " + " ".join(extra)).strip(); added["прежние названия"] += 1
+            else:
+                p = [main_name, "Посёлок", round(x["lat"], 5), round(x["lng"], 5), "", "", "", "", " ".join(n for n in names if n != main_name)]
+                pois[(main_name.lower(), round(p[2], 3), round(p[3], 3))] = p; sett.append(p); added["посёлки"] += 1
+            continue
+        c = next((c for rx, c in WD_CAT if rx.search(types)), None)
+        if not c or not x["ru"] and not x["kk"]: continue
+        dupl = any(math.hypot((p[2] - x["lat"]) * 111, (p[3] - x["lng"]) * 69) < 0.4 and any(same(p[0], n) or (len(p) > 8 and nkey(n) in nkey(p[8])) for n in names) for p in pois.values() if abs(p[2] - x["lat"]) < 0.01 and abs(p[3] - x["lng"]) < 0.015)
+        if dupl: continue
+        p = [main_name, c, round(x["lat"], 5), round(x["lng"], 5), "", "", "", "", " ".join(n for n in names if n != main_name)]
+        pois[(main_name.lower(), round(p[2], 3), round(p[3], 3))] = p; added["места"] += 1
+    print("wikidata добавлено:", added, flush=True)
+
+# народные названия и сокращения: «ЦОН», «старый вокзал», «новый вокзал», «аэропорт»
+ALIASES = [(re.compile(r, re.I), cats, a) for r, cats, a in [
+    (r"\bцон\b|халыққа қызмет|хқко|обслуживания населения", None, "цон хкко центр обслуживания населения халыққа қызмет көрсету орталығы"),
+    (r"^астана[- ]?1$|^вокзал астана$|^астана вокзалы$", None, "вокзал старый вокзал жд вокзал астана 1 железнодорожный"),
+    (r"нұрлы жол|нурлы жол", ("Вокзал", "Здание"), "вокзал новый вокзал жд вокзал нурлы жол железнодорожный"),
+    (r"нурсултан назарбаев|нұрсұлтан назарбаев|astana international airport|аэропорт астана", ("Аэропорт",), "аэропорт астана airport әуежай"),
+    (r"^хан шатыр|khan shatyr", None, "хан шатыр ханшатыр трц"),
+    (r"\bрдц\b|диагностическ", None, "рдц диагностический центр"),
+    (r"\bену\b|гумил[её]в", None, "ену евразийский университет гумилева"),
+    (r"\bказату\b|сейфуллин.*(университет|агротехн)", None, "казату агротехнический университет сейфуллина"),
+    (r"\bннмц\b|национальный научный медицинский", None, "ннмц медицинский центр"),
+]]
+def add_aliases(pois):
+    n = 0
+    for p in pois.values():
+        for rx, cats, a in ALIASES:
+            if rx.search(p[0]) and (cats is None or p[1] in cats):
+                while len(p) < 9: p.append("")
+                if a not in p[8]: p[8] = (p[8] + " " + a).strip(); n += 1
+        if re.fullmatch(r"астана[- ]?1", p[0].strip(), re.I) and p[1] == "Здание": p[1] = "Вокзал"
+    print("народные названия:", n, flush=True)
+
 def main(old_path, out_path):
     old = json.load(gzip.open(old_path)) if old_path else {"pois": [], "addr": [], "cams": []}
     pois = {(p[0].lower(), round(p[2], 3), round(p[3], 3)): p for p in old["pois"]}
@@ -312,12 +417,25 @@ def main(old_path, out_path):
         p = [name, c, round(la, 5), round(ln, 5), t.get("addr:street", ""), t.get("addr:housenumber", ""), t.get("phone", t.get("contact:phone", "")), t.get("opening_hours", ""), alias]
         k = (name.lower(), round(la, 3), round(ln, 3))
         if k not in pois or (len(pois[k]) < 9 and alias): pois[k] = p
-    els = [e for e in allels if e["tags"].get("addr:housenumber") and e["tags"].get("addr:street")]
-    for e in els:
-        t = e.get("tags", {}); la, ln = ll(e)
+        elif pois[k][1] in ("Здание", "Офис") and c not in ("Здание", "Офис"): pois[k][1] = c
+    # адреса: «улица + дом»; в сёлах часто «посёлок + дом» (addr:place) или только номер дома — тогда берём ближайшую улицу
+    segs = load_streets(EXPORT)
+    na = {"улица": 0, "посёлок": 0, "ближайшая улица": 0}
+    for e in allels:
+        t = e.get("tags", {}); hn = t.get("addr:housenumber")
+        if not hn: continue
+        la, ln = ll(e)
         if la is None: continue
-        a = [t["addr:street"], t["addr:housenumber"], round(la, 5), round(ln, 5)]
-        addr.setdefault((a[0].lower(), str(a[1]).lower(), round(la, 4), round(ln, 4)), a)
+        st = t.get("addr:street") or ""
+        kind = "улица"
+        if not st and t.get("addr:place"): st = t["addr:place"]; kind = "посёлок"
+        if not st: st = nearest_street(segs, la, ln) or ""; kind = "ближайшая улица"
+        if not st or BAD_STREET.search(st): continue
+        a = [st, hn, round(la, 5), round(ln, 5)]
+        k = (a[0].lower(), str(a[1]).lower(), round(la, 4), round(ln, 4))
+        if k not in addr: addr[k] = a; na[kind] += 1
+    print("новых адресов:", na, flush=True)
+    for k in [k for k, a in addr.items() if BAD_STREET.search(str(a[0]))]: del addr[k]
     # места, которых нет в OpenStreetMap, — добавляем вручную (jolda-map/extra_places.json)
     try:
         import os
@@ -326,10 +444,13 @@ def main(old_path, out_path):
     except Exception as e: print("extra:", e)
     try: merge_extra(pois, addr)
     except Exception as e: print("открытые базы:", e, flush=True)
+    try: merge_wikidata(pois)
+    except Exception as e: print("wikidata:", e, flush=True)
     # категории по названию (старые записи «Здание» без тегов)
     for p in pois.values():
         p[1] = cat_by_name(p[0], p[1])
         if len(p) > 4 and re.search(r"https?:|www\.|goo\.gl", str(p[4])): p[4] = ""
+    add_aliases(pois)
     # --- из адресов: микрорайоны, кварталы, массивы и улицы каждого посёлка как отдельные места ---
     # (в сёлах у улиц часто нет линии в OSM, а у микрорайонов — точки; клиент же пишет «4 мкр» или «улица Абая, Малиновка»)
     try: derive_from_addr(pois, addr)

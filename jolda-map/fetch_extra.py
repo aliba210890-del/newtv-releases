@@ -2,7 +2,7 @@
 #  - Overture Maps Places (CDLA-Permissive-2.0) — свежие организации;
 #  - Foursquare Open Source Places (Apache-2.0) — последний публичный выпуск, старые и новые заведения.
 # Результат: overture.ndjson и fsq.ndjson (по одной записи на строку) — их сливает build_places.py.
-import json, subprocess, sys, os
+import json, subprocess, sys, os, re
 import duckdb
 
 W, S, E, N = 70.00, 50.20, 72.90, 52.05
@@ -58,7 +58,29 @@ def run_fsq():
     print("fsq:", n, flush=True)
 
 
+def run_wikidata():
+    # Wikidata: сёла и города (с прежними названиями: «Вячеславка» → «Арнасай»), озёра, школы, мечети — на русском, казахском, английском
+    import urllib.request, urllib.parse
+    q = """SELECT ?i ?ru ?kk ?en ?c (GROUP_CONCAT(DISTINCT ?alt;separator="|") AS ?alts) (GROUP_CONCAT(DISTINCT ?tl;separator="|") AS ?types) WHERE {
+      SERVICE wikibase:box { ?i wdt:P625 ?c . bd:serviceParam wikibase:cornerSouthWest "Point(%s %s)"^^geo:wktLiteral . bd:serviceParam wikibase:cornerNorthEast "Point(%s %s)"^^geo:wktLiteral . }
+      OPTIONAL { ?i wdt:P31 ?t . ?t rdfs:label ?tl FILTER(lang(?tl)="ru") }
+      OPTIONAL { ?i rdfs:label ?ru FILTER(lang(?ru)="ru") } OPTIONAL { ?i rdfs:label ?kk FILTER(lang(?kk)="kk") } OPTIONAL { ?i rdfs:label ?en FILTER(lang(?en)="en") }
+      OPTIONAL { ?i skos:altLabel ?alt FILTER(lang(?alt) IN ("ru","kk","en")) }
+      OPTIONAL { ?i wdt:P1448 ?alt } OPTIONAL { ?i wdt:P1449 ?alt }
+    } GROUP BY ?i ?ru ?kk ?en ?c""" % (W, S, E, N)
+    req = urllib.request.Request("https://query.wikidata.org/sparql?" + urllib.parse.urlencode({"query": q}), headers={"Accept": "application/sparql-results+json", "User-Agent": "JoldaMapBot/1.0 (joldataxi@gmail.com)"})
+    d = json.load(urllib.request.urlopen(req, timeout=180))
+    n = 0
+    with open("wikidata.ndjson", "w", encoding="utf-8") as f:
+        for b in d["results"]["bindings"]:
+            g = lambda k: (b.get(k) or {}).get("value") or ""
+            m = re.match(r"Point\(([-\d.]+) ([-\d.]+)\)", g("c"))
+            if not m: continue
+            f.write(json.dumps({"id": g("i").rsplit("/", 1)[-1], "ru": g("ru"), "kk": g("kk"), "en": g("en"), "alts": [x for x in g("alts").split("|") if x], "types": [x for x in g("types").split("|") if x], "lat": float(m.group(2)), "lng": float(m.group(1))}, ensure_ascii=False) + "\n"); n += 1
+    print("wikidata:", n, flush=True)
+
+
 if __name__ == "__main__":
-    for fn in (run_overture, run_fsq):
+    for fn in (run_overture, run_fsq, run_wikidata):
         try: fn()
         except Exception as e: print("ОШИБКА", fn.__name__, e, file=sys.stderr, flush=True)
