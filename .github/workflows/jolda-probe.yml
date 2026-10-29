@@ -1,0 +1,19 @@
+name: Jolda probe
+on: [workflow_dispatch]
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          for u in "https://data.egov.kz/" "https://data.egov.kz/api/v4/" "https://query.wikidata.org/sparql?query=SELECT%20(1%20as%20%3Fx)%20%7B%7D&format=json" "https://stat.gov.kz/" "https://www.gov.kz/" ; do
+            echo "::notice::$u => $(curl -s -o /tmp/b -w '%{http_code}' -m 25 -A 'Mozilla/5.0 jolda' "$u") $(head -c 160 /tmp/b | tr -d '\n\r')"
+          done
+          pip install -q overturemaps duckdb >/dev/null 2>&1
+          timeout 600 overturemaps download --bbox=70.0,50.2,72.9,52.05 -f geojson --type=address -o addr.geojson 2>&1 | tail -2
+          echo "::notice::overture addresses: $(grep -c '"type": *"Feature"' addr.geojson 2>/dev/null || wc -c < addr.geojson)"
+          Q='SELECT ?i ?ru ?kk ?en ?c (GROUP_CONCAT(DISTINCT ?alt;separator="|") AS ?alts) ?t WHERE { SERVICE wikibase:box { ?i wdt:P625 ?c . bd:serviceParam wikibase:cornerSouthWest "Point(70.0 50.2)"^^geo:wktLiteral . bd:serviceParam wikibase:cornerNorthEast "Point(72.9 52.05)"^^geo:wktLiteral . } ?i wdt:P31 ?t . OPTIONAL{?i rdfs:label ?ru FILTER(lang(?ru)="ru")} OPTIONAL{?i rdfs:label ?kk FILTER(lang(?kk)="kk")} OPTIONAL{?i rdfs:label ?en FILTER(lang(?en)="en")} OPTIONAL{?i skos:altLabel ?alt FILTER(lang(?alt) IN ("ru","kk"))} } GROUP BY ?i ?ru ?kk ?en ?c ?t'
+          curl -s -m 120 -G -H 'Accept: application/sparql-results+json' -A 'JoldaMapBot/1.0 (joldataxi@gmail.com)' --data-urlencode "query=$Q" https://query.wikidata.org/sparql -o wd.json
+          echo "::notice::wikidata: $(python3 -c "import json;d=json.load(open('wd.json'));b=d['results']['bindings'];print(len(b));import collections;print(collections.Counter(x['t']['value'].split('/')[-1] for x in b).most_common(15))" 2>&1 | tr '\n' ' ')"
+          python3 -c "
+          import json;d=json.load(open('wd.json'))['results']['bindings']
+          for x in d[:40]: print(x.get('ru',{}).get('value'),x.get('kk',{}).get('value'),x.get('alts',{}).get('value'),x['t']['value'].split('/')[-1])" || true
