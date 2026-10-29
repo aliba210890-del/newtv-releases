@@ -352,7 +352,8 @@ def merge_wikidata(pois):
         return a == b or (len(a) >= 4 and len(b) >= 4 and (a.startswith(b) or b.startswith(a)))
     added = {"посёлки": 0, "прежние названия": 0, "места": 0}
     for x in items:
-        names = [n for n in [x["ru"], x["kk"], x["en"], *x["alts"]] if n and not re.match(r"^Q\d+$", n)]
+        names = [re.sub(r"\s*\([^)]*\)", "", n).strip() for n in [x["ru"], x["kk"], x["en"], *x["alts"]] if n and not re.match(r"^Q\d+$", n)]
+        names = list(dict.fromkeys(n for n in names if n))
         if not names: continue
         types = " ".join(x["types"])
         main_name = x["ru"] or x["kk"] or x["en"]
@@ -375,6 +376,8 @@ def merge_wikidata(pois):
         if dupl: continue
         p = [main_name, c, round(x["lat"], 5), round(x["lng"], 5), "", "", "", "", " ".join(n for n in names if n != main_name)]
         pois[(main_name.lower(), round(p[2], 3), round(p[3], 3))] = p; added["места"] += 1
+    for p in pois.values():
+        if len(p) > 8 and "(" in p[8]: p[8] = re.sub(r"\s+", " ", re.sub(r"\([^)]*\)", "", p[8])).strip()
     print("wikidata добавлено:", added, flush=True)
 
 # народные названия и сокращения: «ЦОН», «старый вокзал», «новый вокзал», «аэропорт»
@@ -384,6 +387,9 @@ ALIASES = [(re.compile(r, re.I), cats, a) for r, cats, a in [
     (r"нұрлы жол|нурлы жол", ("Вокзал", "Здание"), "вокзал новый вокзал жд вокзал нурлы жол железнодорожный"),
     (r"нурсултан назарбаев|нұрсұлтан назарбаев|astana international airport|аэропорт астана", ("Аэропорт",), "аэропорт астана airport әуежай"),
     (r"^хан шатыр|khan shatyr", None, "хан шатыр ханшатыр трц"),
+    (r"nur alem|нұр әлем|нур алем", ("Музей", "Достопримечательность", "Развлечения", "Здание"), "нур алем нұр әлем сфера экспо expo"),
+    (r"бәйтерек|байтерек|baiterek|bayterek", None, "байтерек бәйтерек монумент"),
+    (r"мега силк|mega silk", None, "мега силк вэй mega silk way трц"),
     (r"\bрдц\b|диагностическ", None, "рдц диагностический центр"),
     (r"\bену\b|гумил[её]в", None, "ену евразийский университет гумилева"),
     (r"\bказату\b|сейфуллин.*(университет|агротехн)", None, "казату агротехнический университет сейфуллина"),
@@ -435,6 +441,15 @@ def main(old_path, out_path):
         k = (a[0].lower(), str(a[1]).lower(), round(la, 4), round(ln, 4))
         if k not in addr: addr[k] = a; na[kind] += 1
     print("новых адресов:", na, flush=True)
+    # проверка «ближайшей улицы» на домах, где улица известна: насколько часто угадываем
+    import random as _r
+    known = [e for e in allels if e["tags"].get("addr:housenumber") and e["tags"].get("addr:street")]
+    _r.seed(1); smp = _r.sample(known, min(4000, len(known))); ok = tot = 0
+    for e in smp:
+        la, ln = ll(e); g = nearest_street(segs, la, ln)
+        if not g: continue
+        tot += 1; ok += (street_core(g) and street_core(g)[0] in street_core(e["tags"]["addr:street"])) or nkey(g) == nkey(e["tags"]["addr:street"])
+    print("ближайшая улица угадана: %d из %d (%.0f%%)" % (ok, tot, 100 * ok / max(tot, 1)), flush=True)
     for k in [k for k, a in addr.items() if BAD_STREET.search(str(a[0]))]: del addr[k]
     # места, которых нет в OpenStreetMap, — добавляем вручную (jolda-map/extra_places.json)
     try:
