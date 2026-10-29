@@ -11,9 +11,9 @@ jobs:
     timeout-minutes: 40
     steps:
       - run: |
-          pip install -q gdown
-          gdown --fuzzy "https://drive.google.com/file/d/${{ inputs.id }}/view" -O v.mp4
-          ls -la v.mp4
+          curl -sSL -o v.mp4 "https://drive.usercontent.google.com/download?id=${{ inputs.id }}&export=download&confirm=t" || echo "::error::curl failed"
+          echo "::notice::size $(stat -c %s v.mp4) type $(file -b v.mp4 | cut -c1-80)"
+          if ! file v.mp4 | grep -qi "media\|mp4\|iso"; then echo "::error::not video: $(head -c 300 v.mp4 | tr -d '\n')"; exit 1; fi
           sudo apt-get install -y -qq ffmpeg >/dev/null
           D=$(ffprobe -v error -show_entries format=duration -of csv=p=0 v.mp4); echo "dur $D"
           mkdir f; ffmpeg -loglevel error -i v.mp4 -vf "fps=1/2,scale=480:-2" -q:v 6 f/%04d.jpg
