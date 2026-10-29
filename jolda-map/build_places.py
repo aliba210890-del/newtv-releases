@@ -412,8 +412,16 @@ ALIASES = [(re.compile(r, re.I), cats, a) for r, cats, a in [
     (r"\bказату\b|сейфуллин.*(университет|агротехн)", None, "казату агротехнический университет сейфуллина"),
     (r"\bннмц\b|национальный научный медицинский", None, "ннмц медицинский центр"),
 ]]
+# исправления названий, о которых сообщили (неверно записаны в открытых базах): старое имя остаётся как вариант для поиска
+RENAME = [("Баурым", 51.0817, 71.74369, "Бауырым")]
 def add_aliases(pois):
     n = 0
+    for old, la, ln, new in RENAME:
+        for p in pois.values():
+            if p[0] == old and math.hypot((p[2] - la) * 111, (p[3] - ln) * 69) < 0.3:
+                while len(p) < 9: p.append("")
+                p[0] = new
+                if old not in p[8]: p[8] = (p[8] + " " + old).strip()
     for p in pois.values():
         for rx, cats, a in ALIASES:
             if rx.search(p[0]) and (cats is None or p[1] in cats):
