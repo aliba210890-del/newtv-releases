@@ -27,6 +27,22 @@ def load_export(path):
     return out
 
 BAD_STREET = re.compile(r"[<>]|различн|unknown|без названия|^\W*$|^\d+$", re.I)
+def load_street_ru(path):
+    # казахское название улицы (как в адресах OSM) → русское (name:ru той же улицы): клиенту в русском приложении показываем по-русски
+    m = {}
+    try:
+        with open(path, encoding="utf-8") as f:
+            for line in f:
+                if '"name:ru"' not in line or '"highway"' not in line and '"place"' not in line: continue
+                try: t = (json.loads(line.strip().lstrip("\x1e")).get("properties") or {})
+                except Exception: continue
+                ru = (t.get("name:ru") or "").strip()
+                if not ru: continue
+                for k in ("name", "name:kk"):
+                    v = (t.get(k) or "").strip()
+                    if v and v != ru: m.setdefault(v, ru)
+    except Exception as e: print("русские названия улиц:", e, flush=True)
+    return m
 def load_streets(path):
     # линии улиц с названием → короткие отрезки в сетке ~200 м (для «дом без улицы»)
     grid = {}
@@ -538,7 +554,11 @@ def main(old_path, out_path):
         if p[1] == "Здание" and nkey(p[0]) in vill and not any(str(x).strip() for x in p[4:8]) and math.hypot((p[2] - 51.128) * 111, (p[3] - 71.43) * 69) > 15: drop.add(k)
     for k in drop: del pois[k]
     print("посёлки-дубли и мусорные «здания» убраны: %d" % len(drop), flush=True)
-    out = {"pois": list(pois.values()), "addr": list(addr.values()), "cams": old.get("cams", []), "license": "© OpenStreetMap contributors (ODbL); Overture Maps Foundation (CDLA-Permissive-2.0); Foursquare OS Places (Apache-2.0)", "built": time.strftime("%Y-%m-%d")}
+    sru = load_street_ru(EXPORT)
+    used = {a[0] for a in addr.values()} | {p[4] for p in pois.values() if p[4]}
+    sru = {k: v for k, v in sru.items() if k in used}
+    print("русских названий улиц: %d (адресов с ними: %d)" % (len(sru), sum(1 for a in addr.values() if a[0] in sru)), flush=True)
+    out = {"pois": list(pois.values()), "addr": list(addr.values()), "sru": sru, "cams": old.get("cams", []), "license": "© OpenStreetMap contributors (ODbL); Overture Maps Foundation (CDLA-Permissive-2.0); Foursquare OS Places (Apache-2.0)", "built": time.strftime("%Y-%m-%d")}
     with gzip.open(out_path, "wt", encoding="utf-8") as f: json.dump(out, f, ensure_ascii=False, separators=(",", ":"))
     print("мест: %d → %d, адресов: %d → %d, ЖК: %d" % (n0p, len(pois), n0a, len(addr), sum(1 for p in pois.values() if p[1] == "ЖК")))
 
