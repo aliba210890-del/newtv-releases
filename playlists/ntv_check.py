@@ -8,7 +8,9 @@ def main(path, report):
     try:  # канал «Караоке» = по одному (уже проверенному) ролику на каждую песню из караоке
         k = json.load(open("karaoke.json", encoding="utf-8"))
         for c in d["channels"]:
-            if c["id"] == "kar": c["ids"] = [s["ids"][0] for s in k["songs"] if s.get("ids")]
+            if c["id"] == "kar":
+                c["ids"] = [s["ids"][0] for s in k["songs"] if s.get("ids")]
+                __import__("random").Random(7).shuffle(c["ids"])  # вперемешку, а не по жанрам
     except Exception as e: print("караоке:", e)
     ids = sorted({i for c in d["channels"] for i in c["ids"]})
     st = playable(ids)
