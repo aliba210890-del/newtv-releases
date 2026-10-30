@@ -6,7 +6,7 @@ name: Karaoke
 on:
   workflow_dispatch:
   schedule:
-    - cron: "43 2 * * 1"   # раз в неделю, в понедельник ночью
+    - cron: "43 2 * * *"   # каждую ночь
 
 permissions:
   contents: write
@@ -30,12 +30,17 @@ jobs:
           YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
         run: python3 playlists/karaoke_check.py playlists/karaoke.json /tmp/karaoke.json playlists/karaoke_report.txt && cp /tmp/karaoke.json playlists/karaoke.json
 
+      - name: Проверить свои каналы New TV
+        env:
+          YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
+        run: cd playlists && python3 ntv_check.py ntv_channels.json karaoke_report.txt
+
       - name: Сохранить и выложить
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           git config user.name "newtv-bot"
           git config user.email "newtv-bot@users.noreply.github.com"
-          git add playlists/karaoke.json playlists/karaoke_report.txt
+          git add playlists/karaoke.json playlists/karaoke_report.txt playlists/ntv_channels.json
           git diff --cached --quiet || (git commit -m "Караоке: проверка роликов" && git pull --rebase && git push)
           gh release upload latest playlists/karaoke.json --clobber --repo "$GITHUB_REPOSITORY"
