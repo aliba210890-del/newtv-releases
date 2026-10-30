@@ -30,11 +30,6 @@ jobs:
           YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
         run: python3 playlists/karaoke_check.py playlists/karaoke.json /tmp/karaoke.json playlists/karaoke_report.txt && cp /tmp/karaoke.json playlists/karaoke.json
 
-      - name: Проверить свои каналы New TV
-        env:
-          YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
-        run: cd playlists && python3 ntv_check.py ntv_channels.json karaoke_report.txt
-
       - name: Сохранить и выложить
         env:
           GH_TOKEN: ${{ github.token }}
