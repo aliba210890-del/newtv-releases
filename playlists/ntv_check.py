@@ -5,6 +5,11 @@ from karaoke_check import playable
 
 def main(path, report):
     d = json.load(open(path, encoding="utf-8"))
+    try:  # канал «Караоке» = по одному (уже проверенному) ролику на каждую песню из караоке
+        k = json.load(open("karaoke.json", encoding="utf-8"))
+        for c in d["channels"]:
+            if c["id"] == "kar": c["ids"] = [s["ids"][0] for s in k["songs"] if s.get("ids")]
+    except Exception as e: print("караоке:", e)
     ids = sorted({i for c in d["channels"] for i in c["ids"]})
     st = playable(ids)
     lines = [f"Свои каналы: роликов {len(ids)}, не подходят: {sum(1 for i in ids if st.get(i))}"]
