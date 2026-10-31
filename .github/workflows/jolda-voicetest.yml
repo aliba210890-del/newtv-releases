@@ -1,0 +1,18 @@
+# Проверка ударения «Жолда» (тестовые фразы в релиз voice)
+name: Jolda voice test
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ["jolda-voice/test_stress.py", ".github/workflows/jolda-voicetest.yml"]
+permissions:
+  contents: write
+jobs:
+  t:
+    runs-on: ubuntu-latest
+    env: { GH_TOKEN: "${{ github.token }}", R: "${{ github.repository }}" }
+    steps:
+      - uses: actions/checkout@v4
+      - run: pip install edge-tts
+      - run: python3 -u jolda-voice/test_stress.py && ls -la vt
+      - run: zip -qj voicetest.zip vt/*.mp3 && gh release upload voice voicetest.zip -R "$R" --clobber
