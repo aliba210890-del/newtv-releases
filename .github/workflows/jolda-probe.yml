@@ -6,9 +6,6 @@ jobs:
     steps:
       - run: |
           B=https://joldataxi.kz
-          echo "::notice::revgeo $(curl -s "$B/api/revgeo?lat=51.14002&lng=71.36888")"
-          echo "::notice::khan $(curl -s "$B/api/places?q=%D0%A5%D0%B0%D0%BD%20%D0%A8%D0%B0%D1%82%D1%8B%D1%80&lat=51.15&lng=71.40" | head -c 220)"
-          echo "::notice::turan $(curl -s "$B/api/places?q=%D1%82%D1%83%D1%80%D0%B0%D0%BD%2037&lat=51.15&lng=71.40" | head -c 160)"
-          for k in c d; do curl -s -o a.apk "$B/d/22263b6f3cd26397e8b1f4f7/$k"; echo "::notice::apk $k $(stat -c %s a.apk) $(unzip -l a.apk 2>/dev/null | tail -1)"; done
-          echo "::notice::client new text $(curl -s $B/ | grep -c 'Машина уже рядом')"
-          curl -sL https://github.com/aliba210890-del/newtv-releases/releases/download/map/astana-places.json.gz | gunzip | python3 -c "import sys,json;j=json.load(sys.stdin);s=j.get('sru',{});print('::notice::sru',len(s),'addr',sum(1 for a in j['addr'] if a[0] in s),'/',len(j['addr']),list(s.items())[:6])"
+          echo "::notice::driver ver $(curl -s $B/driver | grep -o '"ru":{"v":"[a-z0-9]*"')"
+          curl -s -o g.mp3 "$B/voice/ru_greet_start.mp3?v=zholdaa2"; echo "::notice::greet $(md5sum g.mp3 | cut -c1-10) $(stat -c %s g.mp3)"
+          curl -s -o b.mp3 "$B/voice/ru_bye_day.mp3?v=zholdaa2"; echo "::notice::bye $(md5sum b.mp3 | cut -c1-10) $(stat -c %s b.mp3)"
