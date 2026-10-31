@@ -15,4 +15,4 @@ jobs:
       - uses: actions/checkout@v4
       - run: pip install edge-tts
       - run: python3 -u jolda-voice/test_stress.py && ls -la vt
-      - run: zip -qj voicetest.zip vt/*.mp3 && gh release upload voice voicetest.zip -R "$R" --clobber
+      - run: zip -qj voicetest.zip vt/* && gh release upload voice voicetest.zip -R "$R" --clobber

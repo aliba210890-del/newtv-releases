@@ -1,19 +1,15 @@
-# Русские фразы Жолды с правильным ударением (ЖолдА пишем как «Жолдаа»), голос как во всём русском наборе
+# Подбор голоса: какой голос был в старом русском наборе
 import asyncio, os, edge_tts
-W = "Жолдаа"
-T = {
- "greet_start": f"Добро пожаловать в такси {W}! Пожалуйста, пристегните ремень безопасности. Приятной поездки!",
- "bye_day": f"Мы приехали. Спасибо, что выбрали такси {W}! Не забудьте свои вещи. Хорошего дня!",
- "bye_eve": f"Мы приехали. Спасибо, что выбрали такси {W}! Не забудьте свои вещи. Хорошего вечера!",
- "bye_night": f"Мы приехали. Спасибо, что выбрали такси {W}! Не забудьте свои вещи. Доброй ночи!",
- "preview": f"Здравствуйте! Я голос навигатора {W}.",
-}
+G = "Добро пожаловать в такси Жолда! Пожалуйста, пристегните ремень безопасности. Приятной поездки!"
 async def main():
     os.makedirs("vt", exist_ok=True)
-    for k, t in T.items():
-        for a in range(5):
-            try:
-                await edge_tts.Communicate(t, "ru-RU-SvetlanaNeural", rate="+30%", pitch="+30Hz").save(f"vt/ru_{k}.mp3"); break
-            except Exception as e:
-                print("retry", e); await asyncio.sleep(3)
+    vs = await edge_tts.list_voices()
+    open("vt/voices.txt", "w").write("\n".join(v["ShortName"] for v in vs if v["Locale"][:2] in ("ru", "kk", "uk")))
+    for v in [v["ShortName"] for v in vs if v["Locale"].startswith("ru")] + ["uk-UA-PolinaNeural", "kk-KZ-AigulNeural"]:
+        for tag, rate, pitch in [("n", "+0%", "+0Hz"), ("f", "+30%", "+30Hz")]:
+            for a in range(3):
+                try:
+                    await edge_tts.Communicate(G, v, rate=rate, pitch=pitch).save(f"vt/{v}_{tag}.mp3"); break
+                except Exception as e:
+                    print("retry", v, e); await asyncio.sleep(2)
 asyncio.run(main())
