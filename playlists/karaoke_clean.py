@@ -4,7 +4,7 @@ import html, json, re, sys
 BAD_VIDEO = re.compile(r"piano|tutorial|разбор|ноты|midi|fl studio|épisode|episode|母", re.I)
 CUT = [r"by\s+music studio", r"от\s+langer miami", r"оригинал\s*\+?", r"поем онлайн.*", r"подпишись.*", r"инстаграм.*", r"inst\s+tik.*",
        r"🎤.*", r"🎶", r"сделано в студии", r"казакша", r"казахское", r"\byoutube\b", r"\bfull\b", r"\d{3,4}p\b", r"лирикс", r"мәтін", r"сөзі",
-       r"\bback\s*ver\b", r"backver", r"\+\s*вокал\s*\+?", r"вокал", r"перевод на русский.*", r"текст", r"онлайн", r"\btrend\w*", r"тренды.*", r"\bkz\b", r"караоке", r"karaoke", r"^группа\s", r"^гр\.?\s"]
+       r"\bback\s*ver\b", r"backver", r"\+\s*вокал\s*\+?", r"вокал", r"перевод на русский.*", r"текст", r"онлайн", r"\btrend\w*", r"тренды.*", r"\bkz\b", r"караоке", r"karaoke"]
 FOLD = str.maketrans("әіңғүұқөһё", "аингууконе")
 
 def fold(s):
@@ -18,7 +18,7 @@ def clean_title(t, artist_names):
         t = re.sub(r"(?<!\w)" + re.escape(n) + r"(?!\w)", " ", t, flags=re.I)
     t = re.sub(r"[~●•|\"«»“”*]+", " ", t)
     t = re.sub(r"\s+", " ", t).strip(" .,!-–—+&:")
-    if re.search(r"(^|\s)ов$|^ов\s", t):
+    if re.search(r"(^|\s)ов$|^ов\s|^гр$|^hi$", t, re.I):
         return ""
     if re.match(r"^(и|feat\.?|ft\.?|&|x)\s", t, re.I) or re.search(r"\s(и|&|feat\.?)$", t, re.I) or len(fold(t)) < 2:
         return ""
