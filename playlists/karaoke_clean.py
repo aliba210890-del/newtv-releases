@@ -1,19 +1,26 @@
 """Чистка черновика караоке: мусор в названиях, не-караоке ролики (уроки пианино), обрывки дуэтов, повторы."""
-import html, json, re, sys
+import html, json, re, sys, unicodedata
 
-BAD_VIDEO = re.compile(r"piano|tutorial|разбор|ноты|midi|fl studio|épisode|episode|母", re.I)
+BAD_VIDEO = re.compile(r"koplo|cowok|piano|tutorial|разбор|ноты|midi|fl studio|épisode|episode|母", re.I)
 CUT = [r"by\s+music studio", r"от\s+langer miami", r"оригинал\s*\+?", r"поем онлайн.*", r"подпишись.*", r"инстаграм.*", r"inst\s+tik.*",
        r"🎤.*", r"🎶", r"сделано в студии", r"казакша", r"казахское", r"\byoutube\b", r"\bfull\b", r"\d{3,4}p\b", r"лирикс", r"мәтін", r"сөзі",
-       r"\bback\s*ver\b", r"backver", r"\+\s*вокал\s*\+?", r"вокал", r"перевод на русский.*", r"текст", r"онлайн", r"\btrend\w*", r"тренды.*", r"\bkz\b", r"караоке", r"karaoke"]
+       r"\bback\s*ver\b", r"backver", r"\+\s*вокал\s*\+?", r"вокал", r"перевод на русский.*", r"текст", r"онлайн", r"\btrend\w*", r"тренды.*", r"\bkz\b", r"караоке", r"karaoke", r"\bminus\b", r"\bplus\b", r"\b20[12]\d\b", r"@\s*\S+", r"dikotv", r"\benglish\b", r"traducci.*", r"\bby\s.*", r"с субтитрами", r"пой вместе с нами", r"(?<!\w)ы(?!\w)", r"музыка песня", r"\bstyle\b"]
 FOLD = str.maketrans("әіңғүұқөһё", "аингууконе")
 
 def fold(s):
+    s = re.sub(r"[\u200b-\u200f\ufeff]", "", unicodedata.normalize("NFC", s))
     return re.sub(r"[^0-9a-zа-я]+", "", s.lower().translate(FOLD))
 
 def clean_title(t, artist_names):
     t = html.unescape(html.unescape(t)).replace("& 39;", "'").replace("&39;", "'")
+    t = re.sub(r"[\u200b-\u200f\u2060\ufeff\u00a0]", " ", unicodedata.normalize("NFC", t))
+    if t.count(",") >= 2: return ""
     for c in CUT:
         t = re.sub(c, " ", t, flags=re.I)
+    vs = []
+    for n in artist_names:
+        vs += [n, n.replace("-", " "), n.replace("'", ""), n.replace("'", " ")]
+    artist_names = sorted(set(vs), key=len, reverse=True)
     for n in artist_names:                      # только целым словом: «Мот» не должен резать «Мотылёк»
         t = re.sub(r"(?<!\w)" + re.escape(n) + r"(?!\w)", " ", t, flags=re.I)
     t = re.sub(r"[~●•|\"«»“”*]+", " ", t)

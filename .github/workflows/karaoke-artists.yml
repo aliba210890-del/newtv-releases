@@ -1,4 +1,4 @@
-# Караоке: черновик каталога по исполнителям (playlists/karaoke_draft.json). В приложение не попадает, пока не утвердим.
+# Караоке: каталог по исполнителям. Раз в сутки дособирает исполнителей (лимит YouTube), чистит названия и вливает в karaoke.json.
 name: Караоке — каталог по исполнителям
 on:
   workflow_dispatch:
@@ -15,10 +15,13 @@ jobs:
       - name: Собрать
         env:
           YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
-        run: python3 playlists/karaoke_artists.py playlists/karaoke_draft.json playlists/karaoke_draft_report.txt
+        run: |
+          python3 playlists/karaoke_artists.py playlists/karaoke_draft.json playlists/karaoke_draft_report.txt
+          python3 playlists/karaoke_clean.py playlists/karaoke_draft.json playlists/karaoke_draft_clean.json > /dev/null
+          python3 playlists/karaoke_merge.py
       - name: Сохранить
         run: |
           git config user.name "newtv-bot"; git config user.email "bot@newtvglobal.online"
-          git add playlists/karaoke_draft.json playlists/karaoke_draft_report.txt
+          git add playlists/karaoke_draft.json playlists/karaoke_draft_report.txt playlists/karaoke_draft_clean.json playlists/karaoke.json
           git commit -qm "Караоке: черновик по исполнителям" || exit 0
           git pull -q --rebase && git push -q
