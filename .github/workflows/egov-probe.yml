@@ -10,15 +10,14 @@ jobs:
     steps:
       - run: |
           echo "key len ${#K}"
-          for q in "адрес" "ономастик" "геоним" "адресный регистр" "s_pb" "улиц"; do
-            curl -s -G "https://data.egov.kz/datasets/search" --data-urlencode "text=$q" -o "s.html"
-            echo "== $q"; grep -o 'datasets/view?index=[a-z0-9_]*[^"]*"[^<]\{0,0\}' s.html | sort -u | head -30
-            grep -o 'index=[a-z0-9_]*' s.html | sort -u | head -40 | tr '\n' ' '; echo
+          for q in "улиц Астана" "наименования улиц" "переименование улиц" "населенные пункты Акмолинской" "елді мекен Ақмола" "адресный" "Астана адрес" "здания Астана" "жилые дома" "многоквартирные" "КСК" "ОСИ"; do
+            for pg in 1 2; do curl -s -G "https://data.egov.kz/datasets/search" --data-urlencode "text=$q" --data-urlencode "page=$pg" -o s.html
+            echo "== $q p$pg"; python3 -c "
+import re,html,sys
+t=open('s.html',encoding='utf-8',errors='ignore').read()
+for m in re.finditer(r'datasets/view\?index=([a-z0-9_\-]+)[^>]*>(.*?)</a>',t,re.S):
+    print(m.group(1),'|',re.sub(r'\s+',' ',html.unescape(re.sub('<[^>]+>','',m.group(2)))).strip()[:120])
+" | sort -u | head -25; done
           done > out.txt 2>&1
-          for ix in s_pb s_ats s_geonims s_grounds s_buildings; do
-            echo "== api $ix" >> out.txt
-            curl -s "https://data.egov.kz/api/v4/$ix/v1?apiKey=$K&source=%7B%22size%22:2%7D" | head -c 800 >> out.txt; echo >> out.txt
-            curl -s "https://data.egov.kz/api/v4/$ix?apiKey=$K&source=%7B%22size%22:2%7D" | head -c 800 >> out.txt; echo >> out.txt
-          done
           cat out.txt | head -100
           gh release upload media out.txt -R ${{ github.repository }} --clobber || (gh release create media -R ${{ github.repository }} -t media -n media && gh release upload media out.txt -R ${{ github.repository }} --clobber)
