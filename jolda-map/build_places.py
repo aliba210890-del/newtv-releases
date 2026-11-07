@@ -454,6 +454,17 @@ def main(old_path, out_path):
     allels = load_export(EXPORT)
     print("объектов в выгрузке:", len(allels), flush=True)
     els = [e for e in allels if e["tags"].get("name")]
+    # подъезды: точки входа с номером (entrance=* + ref) — чтобы пассажир выбрал «подъезд 3», а водитель подъехал точно к нему
+    ent = {}
+    for e in allels:
+        t = e.get("tags", {})
+        if not t.get("entrance") or t.get("entrance") in ("no", "emergency", "service", "garage"): continue
+        ref = str(t.get("ref") or "").strip()[:12]
+        if not ref: continue
+        la, ln = ll(e)
+        if la is None: continue
+        ent[(round(la, 5), round(ln, 5))] = [round(la, 6), round(ln, 6), ref]
+    print("подъездов с номером:", len(ent), flush=True)
     for e in els:
         t = e.get("tags", {}); la, ln = ll(e)
         if la is None: continue
@@ -558,7 +569,7 @@ def main(old_path, out_path):
     used = {a[0] for a in addr.values()} | {p[4] for p in pois.values() if p[4]}
     sru = {k: v for k, v in sru.items() if k in used}
     print("русских названий улиц: %d (адресов с ними: %d)" % (len(sru), sum(1 for a in addr.values() if a[0] in sru)), flush=True)
-    out = {"pois": list(pois.values()), "addr": list(addr.values()), "sru": sru, "cams": old.get("cams", []), "license": "© OpenStreetMap contributors (ODbL); Overture Maps Foundation (CDLA-Permissive-2.0); Foursquare OS Places (Apache-2.0)", "built": time.strftime("%Y-%m-%d")}
+    out = {"pois": list(pois.values()), "addr": list(addr.values()), "sru": sru, "cams": old.get("cams", []), "ent": list(ent.values()) or old.get("ent", []), "license": "© OpenStreetMap contributors (ODbL); Overture Maps Foundation (CDLA-Permissive-2.0); Foursquare OS Places (Apache-2.0)", "built": time.strftime("%Y-%m-%d")}
     with gzip.open(out_path, "wt", encoding="utf-8") as f: json.dump(out, f, ensure_ascii=False, separators=(",", ":"))
     print("мест: %d → %d, адресов: %d → %d, ЖК: %d" % (n0p, len(pois), n0a, len(addr), sum(1 for p in pois.values() if p[1] == "ЖК")))
 

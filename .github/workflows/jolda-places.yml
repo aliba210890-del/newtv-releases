@@ -32,7 +32,7 @@ jobs:
       - name: Вырезать Астану и 100 км вокруг
         run: |
           osmium extract -b 70.00,50.20,72.90,52.05 kz.pbf -o astana.pbf --overwrite
-          osmium tags-filter astana.pbf nwr/name nwr/addr:housenumber -o f.pbf --overwrite
+          osmium tags-filter astana.pbf nwr/name nwr/addr:housenumber n/entrance -o f.pbf --overwrite
           osmium export f.pbf -f geojsonseq -o astana.geojsonseq --overwrite
           wc -l astana.geojsonseq
       - name: Скачать открытые базы организаций (Overture Maps, Foursquare)
