@@ -1,0 +1,24 @@
+# Разведка адресного регистра на data.egov.kz
+name: Egov probe
+on: [workflow_dispatch]
+permissions:
+  contents: write
+jobs:
+  p:
+    runs-on: ubuntu-latest
+    env: { K: "${{ secrets.EGOV_KEY }}", GH_TOKEN: "${{ github.token }}" }
+    steps:
+      - run: |
+          echo "key len ${#K}"
+          for q in "адрес" "ономастик" "геоним" "адресный регистр" "s_pb" "улиц"; do
+            curl -s -G "https://data.egov.kz/datasets/search" --data-urlencode "text=$q" -o "s.html"
+            echo "== $q"; grep -o 'datasets/view?index=[a-z0-9_]*[^"]*"[^<]\{0,0\}' s.html | sort -u | head -30
+            grep -o 'index=[a-z0-9_]*' s.html | sort -u | head -40 | tr '\n' ' '; echo
+          done > out.txt 2>&1
+          for ix in s_pb s_ats s_geonims s_grounds s_buildings; do
+            echo "== api $ix" >> out.txt
+            curl -s "https://data.egov.kz/api/v4/$ix/v1?apiKey=$K&source=%7B%22size%22:2%7D" | head -c 800 >> out.txt; echo >> out.txt
+            curl -s "https://data.egov.kz/api/v4/$ix?apiKey=$K&source=%7B%22size%22:2%7D" | head -c 800 >> out.txt; echo >> out.txt
+          done
+          cat out.txt | head -100
+          gh release upload media out.txt -R ${{ github.repository }} --clobber || (gh release create media -R ${{ github.repository }} -t media -n media && gh release upload media out.txt -R ${{ github.repository }} --clobber)
