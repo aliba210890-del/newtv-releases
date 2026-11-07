@@ -1,4 +1,4 @@
-# Разведка адресного регистра на data.egov.kz
+# Разведка наборов данных на data.egov.kz
 name: Egov probe
 on: [workflow_dispatch]
 permissions:
@@ -8,16 +8,6 @@ jobs:
     runs-on: ubuntu-latest
     env: { K: "${{ secrets.EGOV_KEY }}", GH_TOKEN: "${{ github.token }}" }
     steps:
-      - run: |
-          echo "key len ${#K}"
-          for q in "улиц Астана" "наименования улиц" "переименование улиц" "населенные пункты Акмолинской" "елді мекен Ақмола" "адресный" "Астана адрес" "здания Астана" "жилые дома" "многоквартирные" "КСК" "ОСИ"; do
-            for pg in 1 2; do curl -s -G "https://data.egov.kz/datasets/search" --data-urlencode "text=$q" --data-urlencode "page=$pg" -o s.html
-            echo "== $q p$pg"; python3 -c "
-import re,html,sys
-t=open('s.html',encoding='utf-8',errors='ignore').read()
-for m in re.finditer(r'datasets/view\?index=([a-z0-9_\-]+)[^>]*>(.*?)</a>',t,re.S):
-    print(m.group(1),'|',re.sub(r'\s+',' ',html.unescape(re.sub('<[^>]+>','',m.group(2)))).strip()[:120])
-" | sort -u | head -25; done
-          done > out.txt 2>&1
-          cat out.txt | head -100
-          gh release upload media out.txt -R ${{ github.repository }} --clobber || (gh release create media -R ${{ github.repository }} -t media -n media && gh release upload media out.txt -R ${{ github.repository }} --clobber)
+      - uses: actions/checkout@v4
+      - run: python3 jolda-map/egov_probe.py
+      - run: gh release upload media out.txt -R ${{ github.repository }} --clobber
