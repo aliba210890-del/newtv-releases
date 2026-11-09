@@ -138,12 +138,21 @@ VOICE = os.environ.get('TIP_VOICE', 'artemiy')
 SAY = [('New TV', 'Нью Ти Ви'), ('Fire TV Stick', 'Файр Ти Ви Стик'), ('Downloader', 'Даунлоадер'), ('QR', 'кью ар'), ('Избранное', 'Избранное')]
 
 def tts(text, path):
-    for a, b in SAY: text = text.replace(a, b)
-    subprocess.run(['RHVoice-test', '-p', VOICE, '-r', '105', '-o', path], input=text.encode('utf-8'), check=True,
-                   stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    """Нейроголос Microsoft (edge-tts, звучит как человек). Без него ролик делается без озвучки."""
+    for a, b in SAY[:2]: text = text.replace(a, b)
+    mp3 = path[:-4] + '.mp3'
+    subprocess.run(['edge-tts', '--voice', os.environ.get('TIP_EDGE_VOICE', 'ru-RU-DmitryNeural'), '--rate', '+8%',
+                    '--text', text, '--write-media', mp3], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=60)
+    subprocess.run(['ffmpeg', '-v', 'error', '-y', '-i', mp3, path], check=True)
     out = subprocess.run(['ffprobe', '-v', 'error', '-show_entries', 'format=duration', '-of', 'csv=p=0', path],
                          capture_output=True, text=True).stdout.strip()
     return float(out)
+
+def tts_ok():
+    try:
+        p = os.path.join(tempfile.mkdtemp(), 't.wav'); return tts('Проверка.', p) > 0.3
+    except Exception:
+        return False
 
 def chunks(text, dur):
     words = text.split(); res, cur = [], []
@@ -170,7 +179,8 @@ def main():
     topics = json.load(open(os.path.join(HERE, 'topics.json'), encoding='utf-8'))
     topic = next(t for t in topics if t['id'] == tid)
     tmp = tempfile.mkdtemp()
-    v = topic.get('voice')
+    v = topic.get('voice') if (topic.get('voice') and tts_ok()) else None
+    print('озвучка:', 'нейроголос' if v else 'нет (сервис голоса недоступен)')
     texts = [v['hook']] + v['steps'] + ['Попробуйте сами. Downloader, код пять, четыре, пять, один, два, ноль, семь. Двадцать четыре часа бесплатно.'] if v else None
     renders = [r_hook(topic)] + [r_step(topic, s) for s in topic['steps']] + [r_cta]
     base = [2.6] + [s.get('dur', 4.5) for s in topic['steps']] + [3.6]
