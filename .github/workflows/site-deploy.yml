@@ -1,0 +1,35 @@
+# Выкладка сайта newtvglobal.online (воркер muddy-dew-6a8a, только статика) из ветки site-tmp.
+# Запуск: вручную (workflow_dispatch) или при изменении этого файла.
+name: Site deploy
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: [".github/workflows/site-deploy.yml"]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with: { ref: site-tmp, path: site }
+      - name: Выложить сайт
+        env:
+          CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+          CF_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
+        run: |
+          CF_API_TOKEN=$(printf %s "$CF_API_TOKEN" | tr -d '[:space:]"'"'"'' | sed 's/^Bearer//I')
+          if [ ${#CF_API_TOKEN} -gt 80 ]; then
+            T=$(printf %s "$CF_API_TOKEN" | grep -oiE 'bearer[^A-Za-z0-9_-]*[A-Za-z0-9_-]{30,}' | head -1 | sed -E 's/^bearer[^A-Za-z0-9_-]*//I')
+            [ -n "$T" ] || T=$(printf %s "$CF_API_TOKEN" | grep -oE '[A-Za-z0-9_-]{35,60}' | head -1)
+            CF_API_TOKEN="$T"
+          fi
+          export CLOUDFLARE_API_TOKEN="$CF_API_TOKEN" CLOUDFLARE_ACCOUNT_ID=$(printf %s "$CF_ACCOUNT_ID" | tr -d '[:space:]')
+          rm -rf site/.git site/.github
+          npx -y wrangler@3 deploy --name muddy-dew-6a8a --assets ./site --compatibility-date 2026-10-30
+      - name: Проверка
+        run: |
+          sleep 20
+          curl -s "https://newtvglobal.online/?v=$RANDOM" | grep -o "архив до 7 дней" | head -1 || echo "::warning::не нашёл новую фразу на сайте"
