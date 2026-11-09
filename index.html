@@ -283,7 +283,7 @@ details.more[open] summary::after { transform: rotate(-135deg); }
       <div class="fact"><b>4 100+</b><span>каналов в списке</span></div>
       <div class="fact"><b>38 страны</b><span>каналы на разных языках</span></div>
       <div class="fact"><b>до 7 дней</b><span>архив передач</span></div>
-      <div class="fact"><b>до 5</b><span>устройств одновременно</span></div>
+      <div class="fact"><b>2</b><span>устройства одновременно</span></div>
     </div>
   </div>
 
@@ -385,15 +385,15 @@ details.more[open] summary::after { transform: rotate(-135deg); }
         <a class="btn btn--primary" href="#podklyuchenie">Как начать</a>
       </div>
       <div class="plans plans--one">
-        <article class="plan plan--hot"><span class="plan__tag">Годовая подписка</span><h3>Все каналы, кинозал и архив</h3><p class="plan__price"><span id="pl-price">106 €</span><small>в год<br><span id="pl-dev">2 устройства одновременно</span></small></p><div class="devstep" role="group" aria-label="Количество устройств"><button type="button" id="pl-minus" aria-label="Меньше устройств">−</button><output id="pl-n">2</output><button type="button" id="pl-plus" aria-label="Больше устройств">+</button><span>устройства<br>одновременно</span></div><p class="plan__more">Нужно больше устройств? До 5 на одну подписку.</p><a class="btn btn--primary" href="#lead" data-need="2" id="pl-go">Подключить</a></article>
+        <article class="plan plan--hot"><span class="plan__tag">Годовая подписка</span><h3>Все каналы, кинозал и архив</h3><p class="plan__price"><span id="pl-price">106 €</span><small>в год<br><span id="pl-dev">2 устройства одновременно</span></small></p><p class="plan__more">Смотрите на двух телевизорах или телефонах одновременно.</p><a class="btn btn--primary" href="#lead" data-need="2" id="pl-go">Подключить</a></article>
         <div class="ipnote">
-          <h3>Цены за год</h3>
-          <ul class="ticks"><li><b>2 устройства</b> — 106 € <small>(53 € за устройство)</small></li><li><b>3 устройства</b> — 125 € <small>(41,7 € за устройство)</small></li><li><b>4 устройства</b> — 135 € <small>(33,8 € за устройство)</small></li><li><b>5 устройств</b> — 145 € <small>(29 € за устройство)</small></li></ul>
-          <p style="margin-top:14px">Во всех тарифах одинаково: 4 100+ каналов 38 стран, кинозал, архив до 7 дней и программа передач.</p>
+          <h3>Что входит</h3>
+          <ul class="ticks"><li><b>2 устройства</b> одновременно — 106 € в год</li><li>Без счётчиков и доплат: смотрите сколько хотите</li><li>Бесплатный тест 24 часа перед оплатой</li></ul>
+          <p style="margin-top:14px">Всё включено: 4 100+ каналов 38 стран, кинозал, архив до 7 дней и программа передач.</p>
         </div>
 
       </div>
-      <p class="incl">В каждый тариф входят все каналы, кинозал, архив, программа передач и помощь с подключением.</p>
+      <p class="incl">В тариф входят все каналы, кинозал, архив, программа передач и помощь с подключением.</p>
     </div>
   </section>
 
@@ -438,9 +438,6 @@ details.more[open] summary::after { transform: rotate(-135deg); }
             <select id="f-need">
               <option value="trial">Бесплатный тест</option>
               <option value="2">2 устройства, 106 € в год</option>
-              <option value="3">3 устройства, 125 € в год</option>
-              <option value="4">4 устройства, 135 € в год</option>
-              <option value="5">5 устройств, 145 € в год</option>
               <option value="q">Вопрос</option>
             </select>
           </label>
@@ -530,21 +527,7 @@ details.more[open] summary::after { transform: rotate(-135deg); }
   moreBtn.addEventListener("click", function () { limit += STEP; drawList(); });
   drawChips(); drawList();
 
-  /* ---------- Plan devices ---------- */
-  (function () {
-    var n = 2, PRICE = {2: 106, 3: 125, 4: 135, 5: 145}, m = $("pl-minus"), p = $("pl-plus");
-    function word(k) { return k < 5 ? "устройства" : "устройств"; }
-    function draw() {
-      $("pl-n").textContent = n;
-      $("pl-price").textContent = PRICE[n] + " €";
-      $("pl-dev").textContent = n + " " + word(n) + " одновременно";
-      $("pl-go").setAttribute("data-need", String(n));
-      m.disabled = n <= 2; p.disabled = n >= 5;
-    }
-    m.addEventListener("click", function () { if (n > 2) { n--; draw(); } });
-    p.addEventListener("click", function () { if (n < 5) { n++; draw(); } });
-    draw();
-  })();
+  /* один тариф: 106 € в год за 2 устройства */
 
   /* ---------- Request form ---------- */
   var need = $("f-need");
