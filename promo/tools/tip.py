@@ -111,7 +111,7 @@ def r_step(topic, step):
             d.text((bx + 26, ly + 14), lab, font=lf, fill=(15, 20, 50))
             e = emoji('👆', 66)
             if e: im.paste(e, (int(bx + lw + 40), int(ly + 12)), e)
-        if step.get('note'):
+        if step.get('note') and not topic.get('voice'):
             fn = font('Inter-Bold.otf', 46); d = ImageDraw.Draw(im, 'RGBA')
             centered(d, wrap(d, step['note'], fn, 940), 1560 if not ring else 1640, fn, (255, 200, 120, int(255 * ease((t - 1.0) / 0.5))), 10)
         return im
@@ -134,24 +134,81 @@ def r_cta(t, dur):
     d.text((W // 2, 1300), 'newtvglobal.online', font=font('Inter-Bold.otf', 48), fill=(255, 255, 255, int(255 * q)), anchor='ma')
     return im
 
+VOICE = os.environ.get('TIP_VOICE', 'artemiy')
+SAY = [('New TV', 'Нью Ти Ви'), ('Fire TV Stick', 'Файр Ти Ви Стик'), ('Downloader', 'Даунлоадер'), ('QR', 'кью ар'), ('Избранное', 'Избранное')]
+
+def tts(text, path):
+    for a, b in SAY: text = text.replace(a, b)
+    subprocess.run(['RHVoice-test', '-p', VOICE, '-r', '105', '-o', path], input=text.encode('utf-8'), check=True,
+                   stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    out = subprocess.run(['ffprobe', '-v', 'error', '-show_entries', 'format=duration', '-of', 'csv=p=0', path],
+                         capture_output=True, text=True).stdout.strip()
+    return float(out)
+
+def chunks(text, dur):
+    words = text.split(); res, cur = [], []
+    for w in words:
+        if cur and (len(' '.join(cur + [w])) > 22 or len(cur) >= 4): res.append(' '.join(cur)); cur = [w]
+        else: cur.append(w)
+    if cur: res.append(' '.join(cur))
+    tot = sum(len(c) + 3 for c in res); t = 0.15; out = []
+    for c in res:
+        d = dur * (len(c) + 3) / tot; out.append((t, t + d, c)); t += d
+    return out
+
+def draw_caption(im, t, caps, y):
+    for a, b, c in caps:
+        if a <= t < b:
+            d = ImageDraw.Draw(im, 'RGBA'); f = font('Inter-ExtraBold.otf', 62)
+            w = d.textlength(c, font=f); x = (W - w) / 2
+            d.rounded_rectangle((x - 30, y - 16, x + w + 30, y + f.size + 22), 22, fill=(0, 0, 0, 170))
+            d.text((W // 2, y), c, font=f, fill=(255, 235, 60), anchor='ma', stroke_width=3, stroke_fill=(0, 0, 0))
+            return
+
 def main():
     tid, out = sys.argv[1], sys.argv[2]
     topics = json.load(open(os.path.join(HERE, 'topics.json'), encoding='utf-8'))
     topic = next(t for t in topics if t['id'] == tid)
-    segs = [(2.6, r_hook(topic))] + [(s.get('dur', 4.5), r_step(topic, s)) for s in topic['steps']] + [(3.6, r_cta)]
-    tmp = tempfile.mkdtemp(); n = 0
-    for dur, fn in segs:
-        for i in range(int(dur * FPS)):
-            im = fn(i / FPS, dur)
+    tmp = tempfile.mkdtemp()
+    v = topic.get('voice')
+    texts = [v['hook']] + v['steps'] + ['Попробуйте сами. Downloader, код пять, четыре, пять, один, два, ноль, семь. Двадцать четыре часа бесплатно.'] if v else None
+    renders = [r_hook(topic)] + [r_step(topic, s) for s in topic['steps']] + [r_cta]
+    base = [2.6] + [s.get('dur', 4.5) for s in topic['steps']] + [3.6]
+    segs, wavs = [], []
+    for i, fn in enumerate(renders):
+        caps, dur = [], base[i]
+        if texts:
+            wp = os.path.join(tmp, 'v%d.wav' % i); ad = tts(texts[i], wp)
+            dur = max(ad + 0.45, 2.2); wavs.append((wp, dur))
+            if i < len(renders) - 1: caps = chunks(texts[i], ad)
+        segs.append((dur, fn, caps, 1300 if i == 0 else 1680))
+    n = 0
+    for dur, fn, caps, cy in segs:
+        for i in range(int(round(dur * FPS))):
+            t = i / FPS; im = fn(t, dur)
+            if caps: draw_caption(im, t, caps, cy)
             if i < 6: im = Image.blend(Image.new('RGB', im.size, (0, 0, 0)), im, (i + 1) / 7)
             im.save(os.path.join(tmp, '%05d.jpg' % n), quality=92); n += 1
     total = n / FPS
     music = os.path.join(A, 'music.wav')
-    subprocess.run(['ffmpeg', '-v', 'error', '-y', '-framerate', str(FPS), '-i', os.path.join(tmp, '%05d.jpg'),
-                    '-stream_loop', '-1', '-i', music, '-filter_complex',
-                    f'[1:a]aresample=48000,aformat=channel_layouts=stereo,volume=0.6,atrim=0:{total:.2f},afade=t=in:d=0.4,afade=t=out:st={total-1.2:.2f}:d=1.2[a]',
-                    '-map', '0:v', '-map', '[a]', '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '20', '-pix_fmt', 'yuv420p',
-                    '-c:a', 'aac', '-b:a', '160k', '-shortest', '-movflags', '+faststart', out], check=True)
+    if wavs:
+        parts = []
+        for j, (wp, dur) in enumerate(wavs):
+            pp = os.path.join(tmp, 'p%d.wav' % j)
+            subprocess.run(['ffmpeg', '-v', 'error', '-y', '-i', wp, '-af', f'aresample=48000,aformat=channel_layouts=stereo,adelay=150|150,apad,atrim=0:{round(dur*FPS)/FPS:.4f}', pp], check=True)
+            parts.append(pp)
+        lst = os.path.join(tmp, 'l.txt'); open(lst, 'w').write(''.join(f"file '{p}'\n" for p in parts))
+        voice = os.path.join(tmp, 'voice.wav')
+        subprocess.run(['ffmpeg', '-v', 'error', '-y', '-f', 'concat', '-safe', '0', '-i', lst, '-c', 'pcm_s16le', voice], check=True)
+        afilter = (f'[1:a]aresample=48000,aformat=channel_layouts=stereo,volume=0.16,atrim=0:{total:.2f},afade=t=out:st={total-1.0:.2f}:d=1.0[m];'
+                   f'[2:a]volume=1.6,highpass=f=80,acompressor=threshold=-18dB:ratio=3[vo];[vo][m]amix=inputs=2:duration=first:normalize=0,loudnorm=I=-14:TP=-1.5:LRA=11[a]')
+        cmd = ['ffmpeg', '-v', 'error', '-y', '-framerate', str(FPS), '-i', os.path.join(tmp, '%05d.jpg'), '-stream_loop', '-1', '-i', music, '-i', voice,
+               '-filter_complex', afilter]
+    else:
+        cmd = ['ffmpeg', '-v', 'error', '-y', '-framerate', str(FPS), '-i', os.path.join(tmp, '%05d.jpg'), '-stream_loop', '-1', '-i', music, '-filter_complex',
+               f'[1:a]aresample=48000,aformat=channel_layouts=stereo,volume=0.6,atrim=0:{total:.2f},afade=t=in:d=0.4,afade=t=out:st={total-1.2:.2f}:d=1.2[a]']
+    subprocess.run(cmd + ['-map', '0:v', '-map', '[a]', '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '20', '-pix_fmt', 'yuv420p',
+                          '-c:a', 'aac', '-b:a', '160k', '-t', f'{total:.2f}', '-movflags', '+faststart', out], check=True)
     shutil.rmtree(tmp); print(out, round(total, 1))
 
 if __name__ == '__main__':
