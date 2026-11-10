@@ -6,6 +6,7 @@ jobs:
     steps:
       - run: |
           B=https://joldataxi.kz
-          echo "::notice::driver ver $(curl -s $B/driver | grep -o '"ru":{"v":"[a-z0-9]*"')"
-          curl -s -o g.mp3 "$B/voice/ru_greet_start.mp3?v=zholdaa2"; echo "::notice::greet $(md5sum g.mp3 | cut -c1-10) $(stat -c %s g.mp3)"
-          curl -s -o b.mp3 "$B/voice/ru_bye_day.mp3?v=zholdaa2"; echo "::notice::bye $(md5sum b.mp3 | cut -c1-10) $(stat -c %s b.mp3)"
+          for q in "Хайвил" "Highvill" "Гранд Опера" "Grand Opera" "Нурсая" "Северное сияние" "Европа палас" "Изумрудный квартал" "Хан Шатыр" "ЖК Шахристан" "Тумар" "Миллениум парк" "Атамекен" "Дипломат" "Престиж"; do
+            r=$(curl -s -G "$B/api/places" --data-urlencode "q=$q" --data-urlencode lat=51.13 --data-urlencode lng=71.43 | python3 -c "import sys,json;j=json.load(sys.stdin);print(len(j.get('items',[])), '|', '; '.join((x.get('name','')+' ['+str(x.get('sub',''))+']') for x in j.get('items',[])[:3]))")
+            echo "::notice::$q => $r"
+          done
