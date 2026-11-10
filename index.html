@@ -242,6 +242,8 @@ details.more[open] summary::after { transform: rotate(-135deg); }
 .foot a { text-underline-offset: 3px; }
 @media (prefers-reduced-motion: reduce) { .devs__tab, .devs__ph { animation: none; } }
 </style>
+<script>/* Instagram и Facebook дописывают к ссылке метки (utm_…, fbclid). Убираем их из адреса, чтобы при «Поделиться» уходила короткая ссылка. */
+(function(){try{var u=new URL(location.href),k=[];u.searchParams.forEach(function(v,n){if(/^(utm_|fbclid|gclid|igshid|ttclid|yclid|mc_)/i.test(n))k.push(n)});if(k.length){k.forEach(function(n){u.searchParams.delete(n)});history.replaceState(null,"",u.pathname+(u.search||"")+u.hash)}}catch(e){}})();</script>
 </head>
 <body>
 <header class="top">
