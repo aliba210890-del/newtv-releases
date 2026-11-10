@@ -132,6 +132,9 @@ def r_cta(t, dur):
     d.rounded_rectangle((250, 1080, 830, 1210), 34, outline=(255, 138, 0, int(255 * q)), width=6)
     d.text((W // 2, 1098), '5451207', font=font('Inter-ExtraBold.otf', 82), fill=(255, 255, 255, int(255 * q)), anchor='ma')
     d.text((W // 2, 1300), 'newtvglobal.online', font=font('Inter-Bold.otf', 48), fill=(255, 255, 255, int(255 * q)), anchor='ma')
+    r = ease((t - 1.0) / 0.5)
+    d.rounded_rectangle((150, 1430, 930, 1530), 30, fill=(255, 138, 0, int(255 * r)))
+    d.text((W // 2, 1452), 'Пригласи друга — месяц в подарок', font=font('Inter-ExtraBold.otf', 44), fill=(255, 255, 255, int(255 * r)), anchor='ma')
     return im
 
 VOICE = os.environ.get('TIP_VOICE', 'artemiy')
