@@ -2,3 +2,5 @@
 2026-11-10 test24
 2026-11-11 drug
 2026-11-11 izbrannoe
+2026-11-12 poisk
+2026-11-12 kinozal
