@@ -215,6 +215,16 @@ details.more[open] summary::after { transform: rotate(-135deg); }
 .incl { margin: 1.4rem 0 0; color: var(--muted); }
 
 /* FAQ */
+.revs { margin-top: clamp(2.5rem, 6vw, 3.5rem); }
+.revs h3 { font: 700 clamp(1.2rem, 1.2vw + .9rem, 1.6rem)/1.25 var(--f); margin: 0 0 .4rem; text-align: center; }
+.revs__sub { color: var(--muted); margin: 0 0 1.4rem; text-align: center; }
+.revs__list { list-style: none; margin: 0 auto; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: clamp(.6rem, 2vw, 1.25rem); max-width: 760px; }
+.rev { position: relative; aspect-ratio: 9 / 16; border-radius: 14px; overflow: hidden; border: 1px solid var(--line); background: #000; }
+.rev button { all: unset; cursor: pointer; position: absolute; inset: 0; display: block; }
+.rev img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.rev button::after { content: ""; position: absolute; left: 50%; top: 50%; width: 3.4rem; height: 3.4rem; margin: -1.7rem 0 0 -1.7rem; border-radius: 50%; background: rgba(0,0,0,.55) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23fff' d='M8 5v14l11-7z'/%3E%3C/svg%3E") center/1.6rem no-repeat; border: 2px solid rgba(255,255,255,.85); }
+.rev button:focus-visible { outline: 3px solid var(--cyan); outline-offset: -3px; }
+.rev iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
 .faq { max-width: 52rem; display: grid; gap: .6rem; }
 .faq details { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; }
 .faq summary { cursor: pointer; padding: 1.1rem 1.25rem; font-weight: 600; list-style: none; display: flex; justify-content: space-between; gap: 1rem; align-items: center; }
@@ -385,6 +395,11 @@ details.more[open] summary::after { transform: rotate(-135deg); }
       <div class="plans plans--one" style="display:flex;justify-content:center">
         <article class="plan plan--hot" style="width:100%;max-width:460px"><span class="plan__tag">Годовая подписка</span><h3>Все каналы, кинозал и архив</h3><p class="plan__price"><span id="pl-price">106 €</span><small>в год<br><span id="pl-dev">2 устройства одновременно</span></small></p><ul class="ticks"><li>4 100+ каналов 38 стран</li><li>Кинозал и архив до 7 дней</li><li>Без доплат: смотрите сколько хотите</li></ul><a class="btn btn--primary" href="#lead" data-need="2" id="pl-go">Подключить</a></article>
       </div>
+          <div class="revs" id="otzyvy">
+        <h3>Отзывы наших клиентов</h3>
+        <p class="revs__sub">Настоящие клиенты New TV рассказывают о сервисе</p>
+        <ul class="revs__list"><li class="rev"><button type="button" data-yt="zZrh0-kAxdU" aria-label="Смотреть видеоотзыв 1"><img src="https://i.ytimg.com/vi/zZrh0-kAxdU/hqdefault.jpg" alt="" loading="lazy" width="480" height="360"></button></li><li class="rev"><button type="button" data-yt="15TWcdPPEYE" aria-label="Смотреть видеоотзыв 2"><img src="https://i.ytimg.com/vi/15TWcdPPEYE/hqdefault.jpg" alt="" loading="lazy" width="480" height="360"></button></li><li class="rev"><button type="button" data-yt="a5HKLnSG7Ig" aria-label="Смотреть видеоотзыв 3"><img src="https://i.ytimg.com/vi/a5HKLnSG7Ig/hqdefault.jpg" alt="" loading="lazy" width="480" height="360"></button></li></ul>
+      </div>
     </div>
   </section>
 
@@ -397,6 +412,7 @@ details.more[open] summary::after { transform: rotate(-135deg); }
         
         <details><summary>Можно ли смотреть в Германии и других странах?</summary><p>Да. New TV работает через интернет, поэтому смотреть можно в Германии, Австрии, Швейцарии, Польше, странах Балтии и в любой другой стране. Спутниковая тарелка и кабельное ТВ не нужны: достаточно интернета.</p></details>
         <details><summary>Какой нужен интернет?</summary><p>Для каналов в HD хватает 10–15 Мбит/с, для 4K лучше от 25 Мбит/с. Подойдёт обычный домашний интернет по Wi-Fi или кабелю.</p></details>
+        <details><summary>Почему вам можно доверять?</summary><p>Сначала вы бесплатно смотрите 24 часа и сами проверяете качество, а платите, только если всё понравилось. New TV — зарегистрированное ИП в Казахстане, мы работаем уже 4 года. Видеоотзывы наших клиентов можно посмотреть в разделе «Тариф».</p></details>
         <details><summary>Как оплатить подписку?</summary><p>Через PayPal, Paysend или Western Union. После оплаты мы продлеваем доступ на год, переустанавливать ничего не нужно.</p></details>
         <details><summary>Что делать, если канал зависает или не показывает?</summary><p>Закройте приложение и откройте снова, проверьте интернет. Если не помогло, напишите нам: проверим и при необходимости переключим вас на другой сервер.</p></details>
       </div>
@@ -592,5 +608,6 @@ details.more[open] summary::after { transform: rotate(-135deg); }
 })();
 </script>
 <script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/vce701823e78c4301a35b7e07294d87301792088814092" integrity="sha512-UKNk8GbxkABxKcXYuLkO16EleLGUkcvJWtpSNmExE0Too3ZaFAxTscNWEc1OdAv5/BikHawapSCaiD2XCmp+Bw==" data-cf-beacon='{"version":"2024.11.0","token":"591d4b7cba4b47e1b6024c3f61f450ae","r":1,"spa":2}' crossorigin="anonymous"></script>
+<script>document.addEventListener("click",function(e){var b=e.target.closest&&e.target.closest(".rev button");if(!b)return;var f=document.createElement("iframe");f.src="https://www.youtube-nocookie.com/embed/"+b.dataset.yt+"?autoplay=1&playsinline=1&rel=0";f.allow="autoplay; encrypted-media; picture-in-picture; fullscreen";f.allowFullscreen=true;f.title="Видеоотзыв о New TV";b.replaceWith(f)});</script>
 </body>
 </html>
