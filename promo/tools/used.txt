@@ -4,3 +4,5 @@
 2026-11-11 izbrannoe
 2026-11-12 poisk
 2026-11-12 kinozal
+2026-11-13 karaoke
+2026-11-13 radio
