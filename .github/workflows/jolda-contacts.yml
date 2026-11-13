@@ -5,4 +5,4 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - run: |
-          curl -s https://joldataxi.kz/api/config | python3 -c "import sys,json;j=json.load(sys.stdin);print('::notice::support='+str(j.get('support'))+' phones='+json.dumps(j.get('phones'),ensure_ascii=False))"
+          curl -s -X POST https://joldataxi.kz/api/quote -H 'content-type: application/json' -d '{"from":{"lat":51.0894,"lng":71.4010},"to":{"lat":51.1085,"lng":71.4026}}' | python3 -c "import sys,json;j=json.load(sys.stdin);print('::notice::'+json.dumps({k:j.get(k) for k in ('km','min','coef','parts')},ensure_ascii=False)+' '+json.dumps([(x.get('cls') or x.get('id'),x.get('price')) for x in (j.get('list') or j.get('tariffs') or [])],ensure_ascii=False)[:600])"
