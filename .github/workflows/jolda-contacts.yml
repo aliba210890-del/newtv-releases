@@ -1,0 +1,8 @@
+name: Jolda contacts
+on: [workflow_dispatch]
+jobs:
+  c:
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          curl -s https://joldataxi.kz/api/config | python3 -c "import sys,json;j=json.load(sys.stdin);print('::notice::support='+str(j.get('support'))+' phones='+json.dumps(j.get('phones'),ensure_ascii=False))"
