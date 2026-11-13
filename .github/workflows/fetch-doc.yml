@@ -1,0 +1,15 @@
+# Скачать публичную документацию платёжного сервиса для интеграции
+name: Fetch doc
+on: [workflow_dispatch]
+permissions:
+  contents: write
+jobs:
+  f:
+    runs-on: ubuntu-latest
+    env: { GH_TOKEN: "${{ github.token }}" }
+    steps:
+      - run: |
+          mkdir d && cd d
+          for u in https://xpayment.kz/docs https://xpayment.kz/ https://xpayment.kz/docs/api https://xpayment.kz/llms.txt https://xpayment.kz/openapi.json https://xpayment.kz/api/docs https://xpayment.kz/sitemap.xml; do f=$(echo $u | sed 's#[^a-z0-9]#_#g'); curl -sL -A "Mozilla/5.0" -m 30 "$u" -o "$f" -w "$u %{http_code} %{size_download}\n" >> log.txt; done
+          cd .. && tar czf doc.tgz d
+      - run: gh release upload media doc.tgz -R ${{ github.repository }} --clobber
