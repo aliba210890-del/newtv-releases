@@ -3,9 +3,13 @@ name: Jolda voice
 
 on:
   workflow_dispatch:
+    inputs:
+      only:
+        description: ключи фраз через запятую (пусто — все)
+        default: ""
   push:
     branches: [main]
-    paths: ["jolda-voice/**", ".github/workflows/jolda-voice.yml"]
+    paths: ["jolda-voice/make.py"]
 
 permissions:
   contents: write
@@ -17,6 +21,7 @@ jobs:
     env:
       GH_TOKEN: ${{ github.token }}
       R: ${{ github.repository }}
+      ONLY: ${{ inputs.only }}
     steps:
       - uses: actions/checkout@v4
       - run: pip install edge-tts
