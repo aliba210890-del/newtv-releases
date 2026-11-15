@@ -446,6 +446,33 @@ def add_aliases(pois):
         if re.fullmatch(r"астана[- ]?1", p[0].strip(), re.I) and p[1] == "Здание": p[1] = "Вокзал"
     print("народные названия:", n, flush=True)
 
+UNNAMED = [
+    (lambda t: t.get("landuse") == "cemetery" or t.get("amenity") == "grave_yard", "Кладбище", "кладбище зират зираты мазар бейіт могилы"),
+    (lambda t: t.get("landuse") == "allotments" or t.get("place") == "allotments", "Дачи", "дачи дачный массив саяжай садоводческое товарищество снт"),
+    (lambda t: t.get("leisure") in ("resort", "beach_resort") or t.get("tourism") in ("camp_site",), "Зона отдыха", "зона отдыха база отдыха демалыс аймағы"),
+]
+def add_unnamed(pois, allels):
+    from collections import Counter
+    sett = [p for p in pois.values() if p[1] in ("Посёлок", "Город")]
+    have = [p for p in pois.values() if p[1] in ("Кладбище", "Дачи", "Зона отдыха")]
+    added = Counter(); used = Counter()
+    for e in allels:
+        t = e.get("tags", {})
+        if t.get("name"): continue
+        hit = next(((c, al) for f, c, al in UNNAMED if f(t)), None)
+        if not hit: continue
+        la, ln = ll(e)
+        if la is None: continue
+        c, al = hit
+        if any(q[1] == c and math.hypot((q[2] - la) * 111, (q[3] - ln) * 69) < 0.5 for q in have): continue
+        near = min(sett, key=lambda q: (q[2] - la) ** 2 + ((q[3] - ln) * 0.62) ** 2) if sett else None
+        if not near or math.hypot((near[2] - la) * 111, (near[3] - ln) * 69) > 12: continue
+        v = near[0]; used[(c, v)] += 1
+        name = f"{c} — {v}" + (f" ({used[(c, v)]})" if used[(c, v)] > 1 else "")
+        p = [name, c, round(la, 5), round(ln, 5), "", "", "", "", f"{al} {v} {c.lower()} {v}"]
+        pois[(name.lower(), round(la, 3), round(ln, 3))] = p; have.append(p); added[c] += 1
+    print("безымянные добавлены:", dict(added), flush=True)
+
 def main(old_path, out_path):
     old = json.load(gzip.open(old_path)) if old_path else {"pois": [], "addr": [], "cams": []}
     pois = {(p[0].lower(), round(p[2], 3), round(p[3], 3)): p for p in old["pois"]}
@@ -535,6 +562,9 @@ def main(old_path, out_path):
     for p in pois.values():
         p[1] = cat_by_name(p[0], p[1])
         if len(p) > 4 and re.search(r"https?:|www\.|goo\.gl", str(p[4])): p[4] = ""
+    # безымянные кладбища, дачи и зоны отдыха вокруг Астаны: в OSM у многих нет названия — называем по ближайшему посёлку
+    try: add_unnamed(pois, allels)
+    except Exception as e: print("безымянные:", e, flush=True)
     add_aliases(pois)
     # --- из адресов: микрорайоны, кварталы, массивы и улицы каждого посёлка как отдельные места ---
     # (в сёлах у улиц часто нет линии в OSM, а у микрорайонов — точки; клиент же пишет «4 мкр» или «улица Абая, Малиновка»)
