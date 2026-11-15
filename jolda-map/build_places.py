@@ -456,17 +456,19 @@ def add_unnamed(pois, allels):
     sett = [p for p in pois.values() if p[1] in ("Посёлок", "Город")]
     have = [p for p in pois.values() if p[1] in ("Кладбище", "Дачи", "Зона отдыха")]
     added = Counter(); used = Counter()
+    print("безымянные: всего объектов", len(allels), "посёлков", len(sett), "с тегом landuse=cemetery:", sum(1 for e in allels if e.get("tags", {}).get("landuse") == "cemetery"), flush=True)
     for e in allels:
         t = e.get("tags", {})
         if t.get("name"): continue
         hit = next(((c, al) for f, c, al in UNNAMED if f(t)), None)
         if not hit: continue
+        added["найдено " + hit[0]] += 1
         la, ln = ll(e)
         if la is None: continue
         c, al = hit
-        if any(q[1] == c and math.hypot((q[2] - la) * 111, (q[3] - ln) * 69) < 0.5 for q in have): continue
+        if any(q[1] == c and math.hypot((q[2] - la) * 111, (q[3] - ln) * 69) < 0.5 for q in have): added["рядом уже есть"] += 1; continue
         near = min(sett, key=lambda q: (q[2] - la) ** 2 + ((q[3] - ln) * 0.62) ** 2) if sett else None
-        if not near or math.hypot((near[2] - la) * 111, (near[3] - ln) * 69) > 12: continue
+        if not near or math.hypot((near[2] - la) * 111, (near[3] - ln) * 69) > 12: added["далеко от посёлков"] += 1; continue
         v = near[0]; used[(c, v)] += 1
         name = f"{c} — {v}" + (f" ({used[(c, v)]})" if used[(c, v)] > 1 else "")
         p = [name, c, round(la, 5), round(ln, 5), "", "", "", "", f"{al} {v} {c.lower()} {v}"]
