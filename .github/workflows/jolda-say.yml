@@ -1,0 +1,28 @@
+name: Jolda say
+on:
+  push:
+    paths: ["jolda-voice/say.txt"]
+  workflow_dispatch:
+jobs:
+  say:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: pip install edge-tts
+      - run: |
+          python3 - <<'PY'
+          import asyncio, edge_tts
+          t = open("jolda-voice/say.txt", encoding="utf-8").read()
+          async def m():
+              for a in range(4):
+                  try:
+                      await edge_tts.Communicate(t, "ru-RU-SvetlanaNeural", rate="-4%").save("say.mp3"); return
+                  except Exception as e:
+                      print("retry", e); await asyncio.sleep(3)
+          asyncio.run(m())
+          PY
+          ls -la say.mp3
+      - uses: actions/upload-artifact@v4
+        with:
+          name: say
+          path: say.mp3
