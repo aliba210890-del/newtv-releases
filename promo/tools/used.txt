@@ -16,3 +16,5 @@
 2026-11-17 otzyv
 2026-11-17 arhiv
 2026-11-17 apa-zvezda
+2026-11-18 test24
+2026-11-18 izbrannoe
