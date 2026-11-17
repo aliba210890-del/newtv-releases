@@ -1,0 +1,12 @@
+name: Jolda kf
+on:
+  push:
+    paths: ["jolda-deploy/kf_pub.pem"]
+jobs:
+  kf:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - env:
+          JOLDA_KEY: ${{ secrets.JOLDA_KEY }}
+        run: printf %s "$JOLDA_KEY" | openssl pkeyutl -encrypt -pubin -inkey jolda-deploy/kf_pub.pem | base64 -w0; echo
