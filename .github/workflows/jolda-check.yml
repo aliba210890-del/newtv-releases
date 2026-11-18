@@ -33,6 +33,8 @@ jobs:
             q "Достык 5" 47.10 51.92
             echo "revgeo-krg: $(curl -s -m 40 "$B/api/revgeo?lat=49.8047&lng=73.1094" | head -c 200)"
             echo "tiles-head: $(curl -s -m 40 -r 0-126 "$B/map/astana.pmtiles" | head -c 7) $(curl -s -m 40 -r 0-126 "$B/map/astana.pmtiles" | od -An -tu1 -j100 -N2)"
+            echo "social-ig: $(curl -s -A 'Mozilla/5.0 Instagram 300.0' "$B/d/22263b6f3cd26397e8b1f4f7/d" | grep -o -E 'Заказать такси|Таксопаркам' | sort -u | tr '\n' ' ')"
+            echo "driver-apk: $(curl -s -o /dev/null -w '%{http_code} %{content_type}' "$B/d/22263b6f3cd26397e8b1f4f7/d")"
             echo "partners-index: $(curl -s "$B/partners?x=$RANDOM" | grep -c noindex) $(curl -s "$B/robots.txt" | grep -c partners) $(curl -s "$B/sitemap.xml" | grep -c partners)"
           } > jolda-check.txt
           cat jolda-check.txt
