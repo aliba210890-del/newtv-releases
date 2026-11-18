@@ -1,0 +1,26 @@
+# Разовая правка DNS: запись подтверждения Яндекса — только основной аккаунт Вебмастера (taxi777kz1990).
+name: DNS Yandex verification
+on:
+  workflow_dispatch:
+    inputs:
+      apply:
+        description: "1 — применить, 0 — только показать"
+        default: "0"
+jobs:
+  dns:
+    runs-on: ubuntu-latest
+    steps:
+      - env:
+          T: ${{ secrets.CF_API_TOKEN }}
+          APPLY: ${{ github.event.inputs.apply }}
+        run: |
+          set -e
+          H="Authorization: Bearer $T"
+          Z=$(curl -s -H "$H" "https://api.cloudflare.com/client/v4/zones?name=newtvglobal.online" | jq -r '.result[0].id // empty')
+          echo "zone=$Z"; [ -n "$Z" ] || { echo "::error::нет доступа к зоне"; exit 1; }
+          curl -s -H "$H" "https://api.cloudflare.com/client/v4/zones/$Z/dns_records?type=TXT" | jq -r '.result[] | "\(.id) \(.content)"'
+          ID=$(curl -s -H "$H" "https://api.cloudflare.com/client/v4/zones/$Z/dns_records?type=TXT" | jq -r '.result[] | select(.content|test("yandex-verification")) | .id' | head -1)
+          echo "yandex record=$ID"
+          if [ "$APPLY" = "1" ] && [ -n "$ID" ]; then
+            curl -s -X PATCH -H "$H" -H "Content-Type: application/json" "https://api.cloudflare.com/client/v4/zones/$Z/dns_records/$ID" --data '{"content":"\"yandex-verification: ab52dc4d03bf3f24\""}' | jq '{success, errors, content: .result.content}'
+          fi
