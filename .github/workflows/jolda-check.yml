@@ -21,7 +21,7 @@ jobs:
           {
             echo "time: $(date -u)"
             echo "build: $(curl -s "$B/api/config?x=$RANDOM" | grep -o '"build":"[^"]*"')"
-            q() { local t0=$(date +%s%N); local r=$(curl -s -m 40 -G "$B/api/places" --data-urlencode "q=$1" -d lat=$2 -d lng=$3 | head -c 260); echo "[$1 @ $2,$3] $(( ($(date +%s%N)-t0)/1000000 ))ms: $r"; }
+            q() { local t0=$(date +%s%N); local r=$(curl -s -m 40 -D h.txt -G "$B/api/places" --data-urlencode "q=$1" -d lat=$2 -d lng=$3 | head -c 120); echo "[$1 @ $2,$3] $(( ($(date +%s%N)-t0)/1000000 ))ms $(grep -i -E 'server-timing|x-cache|cf-ray' h.txt | tr -d '\r' | tr '\n' ' '): $r"; }
             q "Ерубаева 50" 49.80 73.10
             q "Сити Молл" 49.80 73.10
             q "Тауке хана 100" 42.32 69.59
