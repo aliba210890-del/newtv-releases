@@ -1,6 +1,6 @@
 # База адресов и мест «Жолда» (Астана и пригороды) из свежего OpenStreetMap.
 # Дополняет старую базу: всё, что было, остаётся; новое из OSM — добавляется.
-import gzip, json, sys, time, re, math
+import gzip, json, sys, time, re, math, os
 
 BBOX = (50.20, 70.00, 52.05, 72.90)  # юг, запад, север, восток — Астана и 100 км вокруг (как карта)
 _OLD_MIRRORS = ["https://overpass-api.de/api/interpreter", "https://overpass.kumi.systems/api/interpreter", "https://maps.mail.ru/osm/tools/overpass/api/interpreter"]
@@ -139,7 +139,7 @@ def cat(t):
         except Exception: pass
     return "Здание"
 
-EXPORT = "astana.geojsonseq"
+EXPORT = os.environ.get("JOLDA_EXPORT", "astana.geojsonseq")  # для всего Казахстана: kz.geojsonseq
 
 # --- категория по названию: для «Здание»/«Офис», у которых в OSM нет понятного тега ---
 NAME_CAT = [

@@ -5,7 +5,7 @@
 import json, subprocess, sys, os, re
 import duckdb
 
-W, S, E, N = 70.00, 50.20, 72.90, 52.05
+W, S, E, N = [float(x) for x in os.environ.get("JOLDA_BBOX", "70.00,50.20,72.90,52.05").split(",")]  # запад, юг, восток, север
 
 
 def run_overture():

@@ -1,0 +1,37 @@
+# Карта «Жолда» на весь Казахстан: вырезаем Казахстан из свежей карты мира Protomaps (OpenStreetMap)
+# и кладём kz.pmtiles в релиз «map» — её показывает приложение (сервер отдаёт /map/astana.pmtiles из этого файла).
+name: Jolda tiles KZ
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "40 20 1 * *"   # раз в месяц
+  push:
+    branches: [main]
+    paths: [".github/workflows/jolda-tiles-kz.yml"]
+
+permissions:
+  contents: write
+
+jobs:
+  tiles:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    env:
+      GH_TOKEN: ${{ github.token }}
+      R: ${{ github.repository }}
+    steps:
+      - name: Программа pmtiles
+        run: |
+          U=$(curl -fsSL https://api.github.com/repos/protomaps/go-pmtiles/releases/latest | grep -o 'https://[^"]*Linux_x86_64.tar.gz' | head -1)
+          echo "$U"; curl -fsSL "$U" | tar xz pmtiles && sudo mv pmtiles /usr/local/bin/ && pmtiles version || true
+      - name: Последняя карта мира
+        run: |
+          K=$(curl -fsSL https://build-metadata.protomaps.dev/builds.json | python3 -c "import json,sys; b=json.load(sys.stdin); print(sorted(x['key'] for x in b)[-1])")
+          echo "build: $K"; echo "SRC=https://build.protomaps.com/$K" >> $GITHUB_ENV
+      - name: Вырезать Казахстан
+        run: |
+          pmtiles extract "$SRC" kz.pmtiles --bbox=46.40,40.50,87.40,55.50 --maxzoom=15 --download-threads=8
+          ls -la kz.pmtiles && pmtiles show kz.pmtiles | head -30
+      - name: Загрузить в релиз
+        run: gh release upload map kz.pmtiles -R "$R" --clobber
