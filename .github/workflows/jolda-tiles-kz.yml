@@ -24,8 +24,8 @@ jobs:
     steps:
       - name: Программа pmtiles
         run: |
-          U=$(curl -fsSL https://api.github.com/repos/protomaps/go-pmtiles/releases/latest | grep -o 'https://[^"]*Linux_x86_64.tar.gz' | head -1)
-          curl -fsSL "$U" | tar xz pmtiles && sudo mv pmtiles /usr/local/bin/
+          gh release download -R protomaps/go-pmtiles -p '*Linux_x86_64.tar.gz' -O pm.tgz
+          tar xzf pm.tgz pmtiles && sudo mv pmtiles /usr/local/bin/ && pmtiles version || true
       - name: Последняя карта мира
         run: |
           K=$(curl -fsSL https://build-metadata.protomaps.dev/builds.json | python3 -c "import json,sys; b=json.load(sys.stdin); print(sorted(x['key'] for x in b)[-1])")
