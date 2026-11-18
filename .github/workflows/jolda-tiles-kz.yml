@@ -1,5 +1,6 @@
-# Карта «Жолда» на весь Казахстан: вырезаем Казахстан из свежей карты мира Protomaps (OpenStreetMap)
-# и кладём kz.pmtiles в релиз «map» — её показывает приложение (сервер отдаёт /map/astana.pmtiles из этого файла).
+# Карта «Жолда» на весь Казахстан: вырезаем Казахстан из свежей карты мира Protomaps (OpenStreetMap).
+# Казахстан — до 14 зума (иначе файл больше 2 ГБ), Астана и 100 км вокруг — до 15 зума (номера домов, детали).
+# Результат kz.pmtiles в релизе «map»; сервер отдаёт его по адресу /map/astana.pmtiles.
 name: Jolda tiles KZ
 
 on:
@@ -16,22 +17,37 @@ permissions:
 jobs:
   tiles:
     runs-on: ubuntu-latest
-    timeout-minutes: 180
+    timeout-minutes: 240
     env:
       GH_TOKEN: ${{ github.token }}
       R: ${{ github.repository }}
     steps:
-      - name: Программа pmtiles
+      - name: Программы pmtiles и tippecanoe
         run: |
           U=$(curl -fsSL https://api.github.com/repos/protomaps/go-pmtiles/releases/latest | grep -o 'https://[^"]*Linux_x86_64.tar.gz' | head -1)
-          echo "$U"; curl -fsSL "$U" | tar xz pmtiles && sudo mv pmtiles /usr/local/bin/ && pmtiles version || true
+          curl -fsSL "$U" | tar xz pmtiles && sudo mv pmtiles /usr/local/bin/
+          sudo apt-get update -qq && sudo apt-get install -y -qq build-essential libsqlite3-dev zlib1g-dev
+          git clone -q --depth 1 https://github.com/felt/tippecanoe.git && make -s -C tippecanoe -j4 && sudo make -s -C tippecanoe install
+          tile-join --version || true
       - name: Последняя карта мира
         run: |
           K=$(curl -fsSL https://build-metadata.protomaps.dev/builds.json | python3 -c "import json,sys; b=json.load(sys.stdin); print(sorted(x['key'] for x in b)[-1])")
           echo "build: $K"; echo "SRC=https://build.protomaps.com/$K" >> $GITHUB_ENV
-      - name: Вырезать Казахстан
+      - name: Вырезать Казахстан (до 14 зума) и Астану (15 зум)
         run: |
-          pmtiles extract "$SRC" kz.pmtiles --bbox=46.40,40.50,87.40,55.50 --maxzoom=14 --download-threads=8
-          ls -la kz.pmtiles && pmtiles show kz.pmtiles | head -30
+          pmtiles extract "$SRC" kz14.pmtiles --bbox=46.40,40.50,87.40,55.50 --maxzoom=14 --download-threads=8
+          pmtiles extract "$SRC" ast15.pmtiles --bbox=70.00,50.20,72.90,52.05 --minzoom=15 --maxzoom=15 --download-threads=8 || pmtiles extract "$SRC" ast15.pmtiles --bbox=70.00,50.20,72.90,52.05 --maxzoom=15 --download-threads=8
+          ls -la *.pmtiles; pmtiles show ast15.pmtiles | head -12
+      - name: Склеить
+        run: |
+          MINZ=$(pmtiles show ast15.pmtiles | awk '/min zoom/{print $3}')
+          if [ "$MINZ" = "15" ]; then
+            timeout 170m tile-join -o kz.pmtiles -pk -f kz14.pmtiles ast15.pmtiles 2>&1 | tail -5 || rm -f kz.pmtiles
+          else
+            echo "minzoom не поддерживается — берём только Казахстан до 14"; cp kz14.pmtiles kz.pmtiles
+          fi
+          [ -s kz.pmtiles ] || cp kz14.pmtiles kz.pmtiles
+          ls -la kz.pmtiles; pmtiles show kz.pmtiles | head -20
+          S=$(stat -c %s kz.pmtiles); if [ $S -ge 2100000000 ]; then echo "слишком большой — берём kz14"; cp kz14.pmtiles kz.pmtiles; fi
       - name: Загрузить в релиз
         run: gh release upload map kz.pmtiles -R "$R" --clobber
