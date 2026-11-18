@@ -10,7 +10,7 @@ permissions:
 jobs:
   check:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 15
     env:
       GH_TOKEN: ${{ github.token }}
       R: ${{ github.repository }}
@@ -20,18 +20,20 @@ jobs:
           B=https://jolda.aliba210890.workers.dev
           {
             echo "time: $(date -u)"
-            echo "partners: $(curl -s -o /dev/null -w '%{http_code}' "$B/partners?x=$RANDOM")"
-            P=$(curl -s "$B/partners?x=$RANDOM"); echo "partners-telephony: $(echo "$P" | grep -c 'Звонки клиентов')"
-            D=$(curl -s "$B/driver?x=$RANDOM"); echo "driver-myHead: $(echo "$D" | grep -c 'function myHead')"; echo "driver-navframe: $(echo "$D" | grep -c 'function frame(ts)')"
-            C=$(curl -s "$B/?x=$RANDOM"); echo "client-trSub: $(echo "$C" | grep -c 'function trSub')"; echo "client-wayLine: $(echo "$C" | grep -c 'wayLine')"
-            A=$(curl -s "$B/admin?x=$RANDOM"); echo "admin-miss: $(echo "$A" | grep -c 'Что искали и не нашли')"
-            echo "search-mkr: $(curl -s -G "$B/api/places" --data-urlencode 'q=4 мкр' -d lat=51.08 -d lng=71.74 | head -c 140)"
-            for i in 1 2 3 4 5; do echo "search-$i: $(curl -s -o /dev/null -w '%{http_code}' -G "$B/api/places" --data-urlencode "q=абая $i")"; done
-            echo "client-resume: $(echo "$C" | grep -c 'let hiddenAt = 0')"; echo "client-freshfix: $(echo "$C" | grep -c 'maximumAge: 60000')"; echo "driver-resume: $(echo "$D" | grep -c 'S.gpsWatch = navigator')"
-            O=$(curl -s "$B/offer?x=$RANDOM"); echo "offer-city-only: $(echo "$O" | grep -o 'г\. Астана' | head -1)"
-            echo "search-omarov: $(curl -s -G "$B/api/places" --data-urlencode 'q=Ильяса Омарова 23/1' | head -c 160)"
-            echo "search-pharmacy: $(curl -s -G "$B/api/places" --data-urlencode 'q=pharmacy' | head -c 120)"
-            echo "quote-zhibek: $(curl -s -XPOST "$B/api/quote" -H 'content-type: application/json' -d '{"from":{"lat":51.0811,"lng":71.7446},"to":{"lat":51.14002,"lng":71.36888}}' | head -c 400)"
+            echo "build: $(curl -s "$B/api/config?x=$RANDOM" | grep -o '"build":"[^"]*"')"
+            q() { local t0=$(date +%s%N); local r=$(curl -s -m 40 -G "$B/api/places" --data-urlencode "q=$1" -d lat=$2 -d lng=$3 | head -c 260); echo "[$1 @ $2,$3] $(( ($(date +%s%N)-t0)/1000000 ))ms: $r"; }
+            q "Ерубаева 50" 49.80 73.10
+            q "Сити Молл" 49.80 73.10
+            q "Тауке хана 100" 42.32 69.59
+            q "Абая 10" 51.668 71.037
+            q "Караганда" 51.07 71.75
+            q "Шымкент" 51.07 71.75
+            q "Бауырым" 51.075 71.75
+            q "Ерубаева 50" 49.80 73.10
+            q "Достык 5" 47.10 51.92
+            echo "revgeo-krg: $(curl -s -m 40 "$B/api/revgeo?lat=49.8047&lng=73.1094" | head -c 200)"
+            echo "tiles-head: $(curl -s -m 40 -r 0-126 "$B/map/astana.pmtiles" | head -c 7) $(curl -s -m 40 -r 0-126 "$B/map/astana.pmtiles" | od -An -tu1 -j100 -N2)"
+            echo "partners-index: $(curl -s "$B/partners?x=$RANDOM" | grep -c noindex) $(curl -s "$B/robots.txt" | grep -c partners) $(curl -s "$B/sitemap.xml" | grep -c partners)"
           } > jolda-check.txt
           cat jolda-check.txt
           gh release upload map jolda-check.txt -R "$R" --clobber
