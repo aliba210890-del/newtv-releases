@@ -1,5 +1,5 @@
 # Карта «Жолда» на весь Казахстан: вырезаем Казахстан из свежей карты мира Protomaps (OpenStreetMap).
-# Казахстан — до 14 зума (иначе файл больше 2 ГБ), Астана и 100 км вокруг — до 15 зума (номера домов, детали).
+# Режем строго по границе страны (без соседних Омска, Ташкента, Бишкека) — так весь Казахстан влезает до 15 зума.
 # Результат kz.pmtiles в релизе «map»; сервер отдаёт его по адресу /map/astana.pmtiles.
 name: Jolda tiles KZ
 
@@ -22,32 +22,48 @@ jobs:
       GH_TOKEN: ${{ github.token }}
       R: ${{ github.repository }}
     steps:
-      - name: Программы pmtiles и tippecanoe
+      - name: Программа pmtiles
         run: |
           U=$(curl -fsSL https://api.github.com/repos/protomaps/go-pmtiles/releases/latest | grep -o 'https://[^"]*Linux_x86_64.tar.gz' | head -1)
           curl -fsSL "$U" | tar xz pmtiles && sudo mv pmtiles /usr/local/bin/
-          sudo apt-get update -qq && sudo apt-get install -y -qq build-essential libsqlite3-dev zlib1g-dev
-          git clone -q --depth 1 https://github.com/felt/tippecanoe.git && make -s -C tippecanoe -j4 && sudo make -s -C tippecanoe install
-          tile-join --version || true
       - name: Последняя карта мира
         run: |
           K=$(curl -fsSL https://build-metadata.protomaps.dev/builds.json | python3 -c "import json,sys; b=json.load(sys.stdin); print(sorted(x['key'] for x in b)[-1])")
           echo "build: $K"; echo "SRC=https://build.protomaps.com/$K" >> $GITHUB_ENV
-      - name: Вырезать Казахстан (до 14 зума) и Астану (15 зум)
+      - name: Граница Казахстана (Geofabrik)
         run: |
-          pmtiles extract "$SRC" kz14.pmtiles --bbox=46.40,40.50,87.40,55.50 --maxzoom=14 --download-threads=8
-          pmtiles extract "$SRC" ast15.pmtiles --bbox=70.00,50.20,72.90,52.05 --minzoom=15 --maxzoom=15 --download-threads=8 || pmtiles extract "$SRC" ast15.pmtiles --bbox=70.00,50.20,72.90,52.05 --maxzoom=15 --download-threads=8
-          ls -la *.pmtiles; pmtiles show ast15.pmtiles | head -12
-      - name: Склеить
+          curl -fsSL -o kz.poly https://download.geofabrik.de/asia/kazakhstan.poly
+          python3 - <<'PY'
+          import json
+          rings, cur = [], None
+          for ln in open("kz.poly"):
+              t = ln.strip()
+              if not t: continue
+              if t == "END":
+                  if cur is not None: rings.append(cur); cur = None
+                  continue
+              p = t.split()
+              if len(p) == 2:
+                  try: cur.append([float(p[0]), float(p[1])]); continue
+                  except Exception: pass
+              if cur is None and t != "kazakhstan": cur = []
+          polys = [[r + [r[0]]] for r in rings if len(r) > 3]
+          json.dump({"type": "MultiPolygon", "coordinates": polys}, open("kz.geojson", "w"))
+          print("колец:", len(polys))
+          PY
+      - name: Вырезать весь Казахстан до 15 зума (по границе страны)
         run: |
-          MINZ=$(pmtiles show ast15.pmtiles | awk '/min zoom/{print $3}')
-          if [ "$MINZ" = "15" ]; then
-            set -o pipefail; timeout 170m tile-join -o kz.pmtiles -pk -f kz14.pmtiles ast15.pmtiles 2>&1 | tail -5 || rm -f kz.pmtiles
+          pmtiles extract "$SRC" kz15full.pmtiles --region=kz.geojson --maxzoom=15 --download-threads=8
+          ls -la kz15full.pmtiles
+      - name: Выбрать файл
+        run: |
+          S=$(stat -c %s kz15full.pmtiles)
+          if [ $S -lt 2100000000 ]; then
+            echo "весь Казахстан до 15 зума помещается: $S"; mv kz15full.pmtiles kz.pmtiles
           else
-            echo "minzoom не поддерживается — берём только Казахстан до 14"; cp kz14.pmtiles kz.pmtiles
+            echo "до 15 зума не помещается ($S) — Казахстан до 14 по границе"; rm -f kz15full.pmtiles
+            pmtiles extract "$SRC" kz.pmtiles --region=kz.geojson --maxzoom=14 --download-threads=8
           fi
-          [ -s kz.pmtiles ] && pmtiles verify kz.pmtiles >/dev/null 2>&1 || cp kz14.pmtiles kz.pmtiles
-          ls -la kz.pmtiles; pmtiles show kz.pmtiles | head -20
-          S=$(stat -c %s kz.pmtiles); if [ $S -ge 2100000000 ]; then echo "слишком большой — берём kz14"; cp kz14.pmtiles kz.pmtiles; fi
+          pmtiles show kz.pmtiles | head -12; ls -la kz.pmtiles
       - name: Загрузить в релиз
         run: gh release upload map kz.pmtiles -R "$R" --clobber
