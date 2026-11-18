@@ -1,4 +1,4 @@
-# Выкладка сайта newtvglobal.online (воркер muddy-dew-6a8a, только статика) из ветки site-tmp.
+# Выкладка сайта newtvglobal.online (воркер muddy-dew-6a8a) из ветки site-tmp: статика + site-worker (страницы /activate и /pay на нашем адресе).
 # Запуск: вручную (workflow_dispatch) или при изменении этого файла.
 name: Site deploy
 
@@ -6,13 +6,15 @@ on:
   workflow_dispatch:
   push:
     branches: [main]
-    paths: [".github/workflows/site-deploy.yml"]
+    paths: [".github/workflows/site-deploy.yml", "site-worker/**"]
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
+      - uses: actions/checkout@v4
+        with: { path: main }
       - uses: actions/checkout@v4
         with: { ref: site-tmp, path: site }
       - name: Выложить сайт
@@ -28,8 +30,10 @@ jobs:
           fi
           export CLOUDFLARE_API_TOKEN="$CF_API_TOKEN" CLOUDFLARE_ACCOUNT_ID=$(printf %s "$CF_ACCOUNT_ID" | tr -d '[:space:]')
           rm -rf site/.git site/.github
-          npx -y wrangler@3 deploy --name muddy-dew-6a8a --assets ./site --compatibility-date 2026-10-30
+          cd main/site-worker && npx -y wrangler@3 deploy
       - name: Проверка
         run: |
           sleep 20
           curl -s "https://newtvglobal.online/?v=$RANDOM" | grep -o "архив до 7 дней" | head -1 || echo "::warning::не нашёл новую фразу на сайте"
+          curl -s "https://newtvglobal.online/activate?v=$RANDOM" | grep -c "Активация New TV" || { echo "::error::страница /activate не открылась"; exit 1; }
+          curl -s -o /dev/null -w "pay: %{http_code}\n" "https://newtvglobal.online/pay"

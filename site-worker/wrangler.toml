@@ -1,0 +1,12 @@
+# Сайт newtvglobal.online (воркер muddy-dew-6a8a): статика из ветки site-tmp + проход к newtv-api для /activate, /pay.
+name = "muddy-dew-6a8a"
+main = "worker.js"
+compatibility_date = "2026-10-30"
+
+[assets]
+directory = "../../site"
+binding = "ASSETS"
+
+[[services]]
+binding = "NEWTV_API"
+service = "newtv-api"
