@@ -3,3 +3,5 @@
 /pay https://newtv-api.aliba210890.workers.dev/pay 302
 /pay/* https://newtv-api.aliba210890.workers.dev/pay/:splat 302
 /favicon.ico /favicon.png 301
+/activate https://newtv-api.aliba210890.workers.dev/a 302
+/activate/* https://newtv-api.aliba210890.workers.dev/a/:splat 302
