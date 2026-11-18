@@ -18,5 +18,3 @@
 2026-11-17 apa-zvezda
 2026-11-18 test24
 2026-11-18 izbrannoe
-2026-11-19 drug
-2026-11-19 poisk
