@@ -42,11 +42,11 @@ jobs:
         run: |
           MINZ=$(pmtiles show ast15.pmtiles | awk '/min zoom/{print $3}')
           if [ "$MINZ" = "15" ]; then
-            timeout 170m tile-join -o kz.pmtiles -pk -f kz14.pmtiles ast15.pmtiles 2>&1 | tail -5 || rm -f kz.pmtiles
+            set -o pipefail; timeout 170m tile-join -o kz.pmtiles -pk -f kz14.pmtiles ast15.pmtiles 2>&1 | tail -5 || rm -f kz.pmtiles
           else
             echo "minzoom не поддерживается — берём только Казахстан до 14"; cp kz14.pmtiles kz.pmtiles
           fi
-          [ -s kz.pmtiles ] || cp kz14.pmtiles kz.pmtiles
+          [ -s kz.pmtiles ] && pmtiles verify kz.pmtiles >/dev/null 2>&1 || cp kz14.pmtiles kz.pmtiles
           ls -la kz.pmtiles; pmtiles show kz.pmtiles | head -20
           S=$(stat -c %s kz.pmtiles); if [ $S -ge 2100000000 ]; then echo "слишком большой — берём kz14"; cp kz14.pmtiles kz.pmtiles; fi
       - name: Загрузить в релиз
