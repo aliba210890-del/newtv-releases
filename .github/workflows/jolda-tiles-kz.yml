@@ -31,7 +31,7 @@ jobs:
           echo "build: $K"; echo "SRC=https://build.protomaps.com/$K" >> $GITHUB_ENV
       - name: Вырезать Казахстан
         run: |
-          pmtiles extract "$SRC" kz.pmtiles --bbox=46.40,40.50,87.40,55.50 --maxzoom=15 --download-threads=8
+          pmtiles extract "$SRC" kz.pmtiles --bbox=46.40,40.50,87.40,55.50 --maxzoom=14 --download-threads=8
           ls -la kz.pmtiles && pmtiles show kz.pmtiles | head -30
       - name: Загрузить в релиз
         run: gh release upload map kz.pmtiles -R "$R" --clobber
