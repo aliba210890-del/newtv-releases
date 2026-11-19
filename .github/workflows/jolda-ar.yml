@@ -1,0 +1,17 @@
+name: Jolda address register
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ["jolda-map/ar_harvest.py"]
+permissions:
+  contents: write
+jobs:
+  h:
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    env: { GH_TOKEN: "${{ github.token }}" }
+    steps:
+      - uses: actions/checkout@v4
+      - run: python3 -u jolda-map/ar_harvest.py | tee arstat.txt
+      - run: gh release upload map ar-ast.json.gz arstat.txt -R ${{ github.repository }} --clobber
