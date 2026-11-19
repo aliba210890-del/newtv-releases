@@ -27,6 +27,7 @@ def loose(k):
     return " ".join(w)
 
 P = json.load(gzip.open(PLACES, "rt"))
+P["addr"] = [a for a in P["addr"] if len(a) < 5]  # прошлые добавления из регистра собираем заново
 addr = P["addr"]
 have = {(skey(a[0]), str(a[1]).lower().replace(" ", "")) for a in addr}
 
