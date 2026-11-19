@@ -4,7 +4,7 @@ rels = subprocess.run(["aws","s3","ls","--no-sign-request","s3://overturemaps-us
 rel = sorted(re.findall(r"PRE (\d{4}-\d{2}-\d{2}[^/]*)/", rels))[-1]
 print("release", rel)
 W,S,E,N = 70.45, 50.60, 72.45, 51.75
-con = duckdb.connect(); con.execute("INSTALL spatial; LOAD spatial; INSTALL httpfs; LOAD httpfs; SET s3_region='us-west-2';")
+con = duckdb.connect(); con.execute("INSTALL spatial; LOAD spatial; INSTALL httpfs; LOAD httpfs; SET s3_region='us-west-2'; SET geometry_always_xy = true;")
 q = f"""SELECT ST_Y(ST_Centroid(geometry)) la, ST_X(ST_Centroid(geometry)) ln, ST_Area_Spheroid(geometry) ar,
   sources[1].dataset src, class, subtype
 FROM read_parquet('s3://overturemaps-us-west-2/release/{rel}/theme=buildings/type=building/*', filename=true, hive_partitioning=1)
