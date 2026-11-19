@@ -7,11 +7,13 @@ def get(u, n=8000000):
     except Exception as e:
         return "ERR " + str(e)
 B = "https://address-registry.itanalytics.kz/api/v1/"
-j = json.loads(get(B + "localities?limit=100&name=" + urllib.parse.quote("Жибек")))
+j = {"result": []}
+for c in ["113433100", "113433101", "113433000"]:
+    r = json.loads(get(B + "localities?cato=" + c)); out.append("CATO " + c + " " + json.dumps([(x["id"], x["full_path_rus"], x["ats_type"]["value_ru"]) for x in r.get("result", [])], ensure_ascii=False)); j["result"] += r.get("result", [])
 for x in j["result"]:
     if "Акмол" in x["full_path_rus"]: out.append(f"LOC {x['id']} {x['full_path_rus']} {x['ats_type']['value_ru']}")
 for x in j["result"]:
-    if "Акмол" in x["full_path_rus"] and x["ats_type"]["value_ru"] in ("Село", "Поселок", "Посёлок"):
+    if "Акмол" in x["full_path_rus"] and x["ats_type"]["value_ru"] not in ("Сельский округ",):
         vid = x["id"]
         for ep in ["geonims", "buildings", "grounds"]:
             r = get(B + f"{ep}?locality_id={vid}&limit=3")
