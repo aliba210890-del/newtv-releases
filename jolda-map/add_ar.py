@@ -64,12 +64,12 @@ for kk, L in streets.items():
     for (pts, nm) in L:
         skeys_pts[kk].append(pts[len(pts) // 2])
 _sn = {}
-def streets_near(cs):
-    key = tuple(cs)
+def streets_near(cs, R=4000):
+    key = (tuple(cs), R)
     if key in _sn: return _sn[key]
     out = []
     for kk, mids in skeys_pts.items():
-        if any(dist(la0, ln0, m[0], m[1]) < 4000 for (la0, ln0) in cs for m in mids):
+        if any(dist(la0, ln0, m[0], m[1]) < R for (la0, ln0) in cs for m in mids):
             out.append(kk)
     _sn[key] = out
     return out
@@ -118,16 +118,21 @@ for s in AR:
         nosett += 1
         continue
     # линии этой улицы рядом с посёлком (4 км)
+    big = norm(s["loc"]) == "астана"
+    R = 28000 if big else 9000 if s.get("loc_type", "").startswith("Город") else 4000
     best = None
     kw = set(k.split())
-    cands = [k] + [kk for kk in streets_near(cs) if kk != k and kw and set(kk.split()) and (set(kk.split()) <= kw or kw <= set(kk.split())) and max(map(len, kw & set(kk.split())), default=0) >= 4]
+    cands = [k] + [kk for kk in streets_near(cs, R) if kk != k and kw and set(kk.split()) and (set(kk.split()) <= kw or kw <= set(kk.split())) and max(map(len, kw & set(kk.split())), default=0) >= 4]
     for (la0, ln0) in cs:
         lines = []
         for kk in cands:
-            lines = [(pts, nm) for (pts, nm) in streets.get(kk, []) if any(dist(la0, ln0, p[0], p[1]) < 4000 for p in pts[:: max(1, len(pts) // 5)] + [pts[-1]])]
+            lines = [(pts, nm) for (pts, nm) in streets.get(kk, []) if any(dist(la0, ln0, p[0], p[1]) < R for p in pts[:: max(1, len(pts) // 5)] + [pts[-1]])]
             if lines: break
         if lines and (best is None or len(lines) > len(best[1])):
             best = ((la0, ln0), lines)
+    if not best and (big or s.get("loc_type", "").startswith("Город")):
+        nostreet += 1
+        continue
     if not best:
         nostreet += 1
         # улицы нет на карте — адрес всё равно показываем (точку человек уточнит), ставим в центр посёлка
@@ -170,7 +175,7 @@ for s in AR:
         return 1 if (dx * (y - py) - dy * (x - px)) > 0 else -1
     kn = []
     for (n, raw, la, ln) in known.get(k, []):
-        if dist(la0, ln0, la, ln) > 4500:
+        if dist(la0, ln0, la, ln) > R + 500:
             continue
         x, y = (ln - cx) * kx, (la - cy) * ky
         kn.append((n, x * ux + y * uy, side_of(x, y)))
