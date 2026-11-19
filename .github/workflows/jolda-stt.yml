@@ -15,8 +15,7 @@ jobs:
       - uses: actions/checkout@v4
       - run: pip install -q faster-whisper
       - run: |
-          openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 -pass env:JOLDA_KEY -in jolda-stt/in.enc -out in.opus
-          ffmpeg -loglevel error -i in.opus -ar 16000 -ac 1 -f f32le in.raw
+          openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 -pass env:JOLDA_KEY -in jolda-stt/in.enc -out in.raw
           python3 - > out.txt <<'PY'
           import numpy as np
           from faster_whisper import WhisperModel
