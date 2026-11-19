@@ -46,6 +46,12 @@ for p in P["pois"]:
 # точные центры посёлков (по 2ГИС), если в OpenStreetMap точка стоит с краю
 setl["жибек жолы"] = [(51.0745, 71.7659)]
 
+# микрорайоны с известной точкой (из OpenStreetMap и наших дополнений) — для домов на улицах, которых нет на карте
+areas = defaultdict(list)
+for p in P["pois"]:
+    if p[1] in ("Район", "ЖК") and not (len(p) > 4 and p[4]):
+        areas[skey(p[0])].append((p[2], p[3]))
+
 setl_loose = defaultdict(list)
 for kk, v in setl.items():
     setl_loose[loose(re.sub(r"^имени\s+", "", kk))] += v
@@ -145,8 +151,11 @@ for s in AR:
         continue
     if not best:
         nostreet += 1
-        # улицы нет на карте — адрес всё равно показываем (точку человек уточнит), ставим в центр посёлка
+        # улицы нет на карте — адрес всё равно показываем (точку человек уточнит): в центр микрорайона, если он известен, иначе в центр посёлка
         la0, ln0 = cs[0]
+        for (pla, pln) in areas.get(skey(s["street"]), ()):
+            if dist(la0, ln0, pla, pln) < R + 3000 and dist(la0, ln0, pla, pln) > 50:
+                la0, ln0 = pla, pln; break
         disp0 = ("улица " if s.get("stype", "ул.") in ("ул.", "") else (s["stype"] + " ")) + s["street"]
         for h in s["h"]:
             hn = h.lower().replace(" ", "")
