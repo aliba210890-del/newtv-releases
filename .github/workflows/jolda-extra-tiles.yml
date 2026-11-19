@@ -1,0 +1,29 @@
+name: Jolda extra tiles
+on:
+  workflow_dispatch:
+  workflow_run:
+    workflows: ["Jolda places"]
+    types: [completed]
+  push:
+    branches: [main]
+    paths: ["jolda-map/extra_tiles.py", ".github/workflows/jolda-extra-tiles.yml"]
+permissions:
+  contents: write
+jobs:
+  t:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env: { GH_TOKEN: "${{ github.token }}", R: "${{ github.repository }}" }
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          sudo apt-get update -qq && (sudo apt-get install -y -qq tippecanoe || true)
+          which tippecanoe || (git clone -q --depth 1 https://github.com/felt/tippecanoe.git /tmp/tc && make -C /tmp/tc -j4 -s && sudo make -C /tmp/tc install -s)
+          tippecanoe --version
+          pip install -q duckdb
+          gh release download map -R "$R" -p astana-places.json.gz --clobber
+      - run: python3 -u jolda-map/extra_tiles.py | tee extra-tiles.log
+      - run: |
+          tippecanoe -q -o extra.pmtiles --force -Z13 -z15 -L'{"file":"bld.geojsonseq","layer":"bld"}' -L'{"file":"hn.geojsonseq","layer":"hn"}' --drop-densest-as-needed --extend-zooms-if-still-dropping --no-tile-size-limit -P 2>&1 | tail -5
+          ls -la extra.pmtiles | tee -a extra-tiles.log
+          gh release upload map extra.pmtiles extra-tiles.log -R "$R" --clobber
