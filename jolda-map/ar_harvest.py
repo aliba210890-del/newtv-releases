@@ -23,6 +23,11 @@ DIST = ["Целиноградский", "Аршалынский", "Шортан�
 ALL = allpages("localities?x=1")
 print("all localities", len(ALL), flush=True)
 locs = [x for x in ALL if "Акмолинская" in x["full_path_rus"] and (any(("р-н " + d) in x["full_path_rus"] for d in DIST) or "г. Косшы" in x["full_path_rus"])] + [x for x in ALL if x["full_path_rus"].startswith("Республика Казахстан, г. Астана")]
+ids = {x["id"] for x in locs}
+q = [x["id"] for x in locs]
+while q:  # дети каждого округа/посёлка — постраничный список мог что-то пропустить
+    for c in allpages(f"localities?parent_id={q.pop()}"):
+        if c["id"] not in ids: ids.add(c["id"]); locs.append(c); q.append(c["id"])
 print("localities", len(locs), flush=True)
 def streets(l):
     return [(l, g) for g in allpages(f"geonims?locality_id={l['id']}")]

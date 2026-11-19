@@ -36,6 +36,10 @@ for p in P["pois"]:
     if p[1] in ("Город", "Посёлок", "Село", "Деревня", "Аул"):
         setl[norm(p[0])].append((p[2], p[3]))
 
+setl_loose = defaultdict(list)
+for kk, v in setl.items():
+    setl_loose[loose(re.sub(r"^имени\s+", "", kk))] += v
+
 # улицы OpenStreetMap (линии)
 streets = defaultdict(list)  # loose key -> list of polylines [(lat,lng),...]
 with open(OSM, encoding="utf-8") as f:
@@ -53,6 +57,22 @@ with open(OSM, encoding="utf-8") as f:
         names = {t.get(k) for k in ("name", "name:ru", "name:kk", "old_name") if t.get(k)}
         for n in names:
             streets[loose(skey(n))].append((pts, t.get("name:ru") or t.get("name")))
+
+# ключи улиц рядом с посёлком (для нечёткого сравнения названий)
+skeys_pts = defaultdict(list)
+for kk, L in streets.items():
+    for (pts, nm) in L:
+        skeys_pts[kk].append(pts[len(pts) // 2])
+_sn = {}
+def streets_near(cs):
+    key = tuple(cs)
+    if key in _sn: return _sn[key]
+    out = []
+    for kk, mids in skeys_pts.items():
+        if any(dist(la0, ln0, m[0], m[1]) < 4000 for (la0, ln0) in cs for m in mids):
+            out.append(kk)
+    _sn[key] = out
+    return out
 
 # здания: сетка 0.002°
 B = json.load(gzip.open(BLD, "rt"))["b"]
@@ -88,23 +108,35 @@ def numint(h):
     return int(m.group()) if m else None
 
 AR = json.load(gzip.open(AR, "rt"))
-added, nostreet, nosett, exact = 0, 0, 0, 0
+added, nostreet, nosett, exact, unplaced = 0, 0, 0, 0, 0
 for s in AR:
     k = loose(skey(s["street"]))
     if not k:
         continue
-    cs = setl.get(norm(s["loc"]))
+    cs = setl.get(norm(s["loc"])) or setl_loose.get(loose(norm(re.sub(r"^имени\s+", "", s["loc"], flags=re.I))))
     if not cs:
         nosett += 1
         continue
     # линии этой улицы рядом с посёлком (4 км)
     best = None
+    kw = set(k.split())
+    cands = [k] + [kk for kk in streets_near(cs) if kk != k and kw and set(kk.split()) and (set(kk.split()) <= kw or kw <= set(kk.split())) and max(map(len, kw & set(kk.split())), default=0) >= 4]
     for (la0, ln0) in cs:
-        lines = [(pts, nm) for (pts, nm) in streets.get(k, []) if any(dist(la0, ln0, p[0], p[1]) < 4000 for p in pts[:: max(1, len(pts) // 5)] + [pts[-1]])]
+        lines = []
+        for kk in cands:
+            lines = [(pts, nm) for (pts, nm) in streets.get(kk, []) if any(dist(la0, ln0, p[0], p[1]) < 4000 for p in pts[:: max(1, len(pts) // 5)] + [pts[-1]])]
+            if lines: break
         if lines and (best is None or len(lines) > len(best[1])):
             best = ((la0, ln0), lines)
     if not best:
         nostreet += 1
+        # улицы нет на карте — адрес всё равно показываем (точку человек уточнит), ставим в центр посёлка
+        la0, ln0 = cs[0]
+        disp0 = ("улица " if s.get("stype", "ул.") in ("ул.", "") else (s["stype"] + " ")) + s["street"]
+        for h in s["h"]:
+            hn = h.lower().replace(" ", "")
+            if (skey(disp0), hn) in have: continue
+            addr.append([disp0, h, round(la0, 5), round(ln0, 5), 2]); have.add((skey(disp0), hn)); unplaced += 1
         continue
     (la0, ln0), lines = best
     disp = lines[0][1] or ("улица " + s["street"])
@@ -183,6 +215,6 @@ for s in AR:
         addr.append([disp, h, round(la, 5), round(ln, 5), 1])
         have.add((skey(disp), hn))
         added += 1
-print(f"register streets {len(AR)}; added {added}; already {exact}; no street {nostreet}; no settlement {nosett}")
+print(f"register streets {len(AR)}; added {added}; unplaced(center) {unplaced}; already {exact}; no street {nostreet}; no settlement {nosett}")
 P["ar"] = "Адресный регистр РК (address-registry.itanalytics.kz) + контуры зданий Overture"
 json.dump(P, gzip.open(PLACES, "wt"), ensure_ascii=False, separators=(",", ":"))
