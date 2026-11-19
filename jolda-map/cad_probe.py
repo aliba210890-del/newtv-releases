@@ -8,12 +8,16 @@ def get(u, n=3000000):
     except Exception as e:
         return "ERR " + str(e)
 def gj(u):
-    t = get(u)
+    t = get(u.replace("?f=json", "?f=pjson"))
     try: return json.loads(t)
-    except Exception: return {"_err": t[:200]}
+    except Exception: pass
+    h = get(u.replace("?f=json", ""))
+    return {"_html": h}
 B = "https://aisgzk.kz/arcgis/rest/services"
 root = gj(B + "?f=json")
-out.append("ROOT " + json.dumps(root)[:800])
+out.append("ROOT " + json.dumps(root)[:300])
+if "_html" in root:
+    h = root["_html"]; out.append("LINKS " + " ".join(sorted(set(re.findall(r'href="([^"]+)"', h)))[:80]))
 svcs = [(s["name"], s["type"]) for s in root.get("services", [])]
 for f in root.get("folders", []):
     j = gj(f"{B}/{f}?f=json"); svcs += [(s["name"], s["type"]) for s in j.get("services", [])]
