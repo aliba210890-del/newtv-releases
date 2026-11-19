@@ -20,11 +20,13 @@ def allpages(path):
         off += 500
 DIST = ["Целиноградский", "Аршалынский", "Шортандинский", "Аккольский", "Ерейментауский", "Астраханский"]
 roots = []
-for d in DIST:
-    r = get("localities?limit=200&name=" + urllib.parse.quote(d))
-    print("cand", d, [(x["id"], x["full_path_rus"], x["ats_type"]["value_ru"]) for x in r if "Акмолинская" in x["full_path_rus"]][:6], flush=True)
-    roots += [x for x in r if "Акмолинская" in x["full_path_rus"] and "с.о." not in x["full_path_rus"] and x["full_path_rus"].rstrip().endswith(d)]
-r = get("localities?limit=50&name=" + urllib.parse.quote("Косшы")); roots += [x for x in r if "Акмолинская" in x["full_path_rus"]]
+reg = [x for x in get("localities?limit=50&name=" + urllib.parse.quote("Акмолинская")) if "Акмолинская" in x["full_path_rus"] and x.get("parent_id") in (None, 0) or x["ats_type"]["value_ru"].startswith("Област")]
+print("region", [(x["id"], x["full_path_rus"], x["ats_type"]["value_ru"]) for x in reg][:5], flush=True)
+dists = []
+for rg in reg[:3]:
+    dists += allpages(f"localities?parent_id={rg['id']}")
+print("districts", [(x["id"], x["full_path_rus"]) for x in dists][:40], flush=True)
+roots += [x for x in dists if any(d in x["full_path_rus"] for d in DIST) or "Косшы" in x["full_path_rus"]]
 print("roots", [(x["id"], x["full_path_rus"]) for x in roots], flush=True)
 locs, q, seen = [], [x["id"] for x in roots], set()
 while q:
