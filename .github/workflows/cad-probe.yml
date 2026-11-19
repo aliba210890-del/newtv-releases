@@ -1,0 +1,16 @@
+name: Cad probe
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ["jolda-map/cad_probe.py"]
+permissions:
+  contents: write
+jobs:
+  p:
+    runs-on: ubuntu-latest
+    env: { GH_TOKEN: "${{ github.token }}" }
+    steps:
+      - uses: actions/checkout@v4
+      - run: python3 jolda-map/cad_probe.py
+      - run: mv out.txt cad.txt && gh release upload media cad.txt -R ${{ github.repository }} --clobber
