@@ -9,7 +9,7 @@ permissions:
 jobs:
   h:
     runs-on: ubuntu-latest
-    timeout-minutes: 300
+    timeout-minutes: 340
     env: { GH_TOKEN: "${{ github.token }}" }
     steps:
       - uses: actions/checkout@v4

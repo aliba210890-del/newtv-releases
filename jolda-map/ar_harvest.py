@@ -1,5 +1,5 @@
 # Адресный регистр РК: все улицы и дома посёлков вокруг Астаны → ar-ast.json.gz
-import urllib.request, urllib.parse, json, ssl, gzip, time, sys
+import urllib.request, urllib.parse, json, ssl, gzip, time, sys, re
 from concurrent.futures import ThreadPoolExecutor
 ctx = ssl.create_default_context(); ctx.check_hostname = False; ctx.verify_mode = ssl.CERT_NONE
 B = "https://address-registry.itanalytics.kz/api/v1/"
@@ -29,9 +29,26 @@ while q:  # дети каждого округа/посёлка — постра
     for c in allpages(f"localities?parent_id={q.pop()}"):
         if c["id"] not in ids: ids.add(c["id"]); locs.append(c); q.append(c["id"])
 print("localities", len(locs), flush=True)
-def streets(l):
-    return [(l, g) for g in allpages(f"geonims?locality_id={l['id']}")]
-with ThreadPoolExecutor(8) as ex: S = [s for r in ex.map(streets, locs) for s in r]
+# все улицы РК постранично (у части посёлков нет связи parent_id) → фильтр по пути
+def page(off):
+    return get(f"geonims?limit=500&offset={off}")
+GE, off, step = [], 0, 8
+while True:
+    with ThreadPoolExecutor(8) as ex: chunk = list(ex.map(page, range(off, off + 500 * step, 500)))
+    for c in chunk: GE += c
+    off += 500 * step
+    if any(len(c) < 500 for c in chunk): break
+print("all geonims", len(GE), flush=True)
+DP = tuple("р-н " + d for d in DIST)
+def want(path): return ("Акмолинская" in path and (any(d in path for d in DP) or "г. Косшы" in path)) or path.startswith("Республика Казахстан, г. Астана")
+S = []
+for g in GE:
+    p0 = g.get("full_path_rus") or ""
+    if not want(p0): continue
+    parts = [x.strip() for x in p0.split(",")]
+    loc = next((x for x in reversed(parts[:-1]) if re.match(r"^(с\.|п\.|г\.|ст\.|а\.|д\.|рзд\.)\s", x)), parts[-2] if len(parts) > 1 else "")
+    lt = loc.split(" ", 1)[0]; ln = loc.split(" ", 1)[1] if " " in loc else loc
+    S.append(({"name_rus": ln, "ats_type": {"value_ru": {"с.": "Село", "п.": "Посёлок", "г.": "Город", "ст.": "Станция"}.get(lt, lt)}}, g))
 print("streets", len(S), flush=True)
 def houses(lg):
     l, g = lg
