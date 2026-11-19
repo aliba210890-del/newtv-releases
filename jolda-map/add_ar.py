@@ -43,6 +43,9 @@ for p in P["pois"]:
     if p[1] in ("Город", "Посёлок", "Село", "Деревня", "Аул"):
         setl[norm(p[0])].append((p[2], p[3]))
 
+# точные центры посёлков (по 2ГИС), если в OpenStreetMap точка стоит с краю
+setl["жибек жолы"] = [(51.0745, 71.7659)]
+
 setl_loose = defaultdict(list)
 for kk, v in setl.items():
     setl_loose[loose(re.sub(r"^имени\s+", "", kk))] += v
