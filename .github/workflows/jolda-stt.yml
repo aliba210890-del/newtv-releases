@@ -1,0 +1,26 @@
+# Расшифровка голосового (зашифрованный вход и выход)
+name: Jolda STT
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ["jolda-stt/in.enc"]
+permissions:
+  contents: write
+jobs:
+  t:
+    runs-on: ubuntu-latest
+    env: { GH_TOKEN: "${{ github.token }}", R: "${{ github.repository }}", JOLDA_KEY: "${{ secrets.JOLDA_KEY }}" }
+    steps:
+      - uses: actions/checkout@v4
+      - run: pip install -q faster-whisper
+      - run: |
+          openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 -pass env:JOLDA_KEY -in jolda-stt/in.enc -out in.opus
+          python3 - > out.txt <<'PY'
+          from faster_whisper import WhisperModel
+          m=WhisperModel('medium',device='cpu',compute_type='int8')
+          s,i=m.transcribe('in.opus',language='ru',beam_size=5)
+          print(' '.join(x.text.strip() for x in s))
+          PY
+          openssl enc -aes-256-cbc -pbkdf2 -iter 200000 -pass env:JOLDA_KEY -in out.txt -out stt.txt.enc
+          gh release upload voice stt.txt.enc -R "$R" --clobber
