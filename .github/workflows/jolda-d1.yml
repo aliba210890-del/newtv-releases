@@ -14,7 +14,7 @@ jobs:
           curl -s "$U/d1/database" -H "$H" > dbs.json
           python3 -c "import json;d=json.load(open('dbs.json'));print('::notice::dbs',d.get('success'),json.dumps(d.get('errors'))[:200],[(x['name'],x['uuid'],x.get('file_size'),x.get('num_tables')) for x in d.get('result') or []])"
           ID=$(python3 -c "import json;r=json.load(open('dbs.json')).get('result') or [];print(r[0]['uuid'] if r else '')")
-          for q in "SELECT 1 AS ok" "SELECT COUNT(*) n FROM orders" "SELECT COUNT(*) n FROM sqlite_master"; do
+          for q in "SELECT id, name, commission, night_pct, am_free, phone, credits FROM parks"; do
             echo "::notice::$q => $(curl -s -X POST "$U/d1/database/$ID/query" -H "$H" -H 'content-type: application/json' -d "{\"sql\":\"$q\"}" | head -c 400)"
           done
           echo "::notice::site $(curl -s https://joldataxi.kz/api/config | head -c 200)"
