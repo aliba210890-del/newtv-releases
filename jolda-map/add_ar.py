@@ -29,7 +29,13 @@ def loose(k):
 P = json.load(gzip.open(PLACES, "rt"))
 P["addr"] = [a for a in P["addr"] if len(a) < 5]  # прошлые добавления из регистра собираем заново
 addr = P["addr"]
-have = {(skey(a[0]), str(a[1]).lower().replace(" ", "")) for a in addr}
+have_pts = defaultdict(list)
+for a in addr:
+    have_pts[(skey(a[0]), str(a[1]).lower().replace(" ", ""))].append((a[2], a[3]))
+def has(k, la0, ln0, R):
+    # такой дом уже есть в базе именно в этом посёлке/городе (а не одноимённая улица в Астане)
+    return any(dist(la0, ln0, la, ln) < R + 1500 for (la, ln) in have_pts.get(k, ()))
+def add_have(k, la, ln): have_pts[k].append((la, ln))
 
 # посёлки и города (центры) из базы
 setl = defaultdict(list)
@@ -141,8 +147,8 @@ for s in AR:
         disp0 = ("улица " if s.get("stype", "ул.") in ("ул.", "") else (s["stype"] + " ")) + s["street"]
         for h in s["h"]:
             hn = h.lower().replace(" ", "")
-            if (skey(disp0), hn) in have: continue
-            addr.append([disp0, h, round(la0, 5), round(ln0, 5), 2]); have.add((skey(disp0), hn)); unplaced += 1
+            if has((skey(disp0), hn), la0, ln0, R): continue
+            addr.append([disp0, h, round(la0, 5), round(ln0, 5), 2]); add_have((skey(disp0), hn), la0, ln0); unplaced += 1
         continue
     (la0, ln0), lines = best
     disp = lines[0][1] or ("улица " + s["street"])
@@ -191,7 +197,7 @@ for s in AR:
     maxn = max([numint(h) or 0 for h in s["h"]] + [1])
     for h in s["h"]:
         hn = h.lower().replace(" ", "")
-        if (skey(disp), hn) in have or (skey("улица " + s["street"]), hn) in have:
+        if has((skey(disp), hn), la0, ln0, R) or has((skey("улица " + s["street"]), hn), la0, ln0, R):
             exact += 1
             continue
         n = numint(h)
@@ -219,7 +225,7 @@ for s in AR:
         if b:
             la, ln = b
         addr.append([disp, h, round(la, 5), round(ln, 5), 1])
-        have.add((skey(disp), hn))
+        add_have((skey(disp), hn), la, ln)
         added += 1
 print(f"register streets {len(AR)}; added {added}; unplaced(center) {unplaced}; already {exact}; no street {nostreet}; no settlement {nosett}")
 P["ar"] = "Адресный регистр РК (address-registry.itanalytics.kz) + контуры зданий Overture"
