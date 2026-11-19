@@ -19,24 +19,10 @@ def allpages(path):
         if len(r) < 500: return out
         off += 500
 DIST = ["Целиноградский", "Аршалынский", "Шортандинский", "Аккольский", "Ерейментауский", "Астраханский"]
-roots = []
-reg = [x for x in get("localities?limit=50&name=" + urllib.parse.quote("Акмолинская")) if "Акмолинская" in x["full_path_rus"] and x.get("parent_id") in (None, 0) or x["ats_type"]["value_ru"].startswith("Област")]
-print("region", [(x["id"], x["full_path_rus"], x["ats_type"]["value_ru"]) for x in reg][:5], flush=True)
-dists = []
-for rg in reg[:3]:
-    dists += allpages(f"localities?parent_id={rg['id']}")
-print("districts", [(x["id"], x["full_path_rus"]) for x in dists][:40], flush=True)
-roots += [x for x in dists if any(d in x["full_path_rus"] for d in DIST) or "Косшы" in x["full_path_rus"]]
-print("roots", [(x["id"], x["full_path_rus"]) for x in roots], flush=True)
-locs, q, seen = [], [x["id"] for x in roots], set()
-while q:
-    lid = q.pop()
-    if lid in seen: continue
-    seen.add(lid)
-    ch = allpages(f"localities?parent_id={lid}")
-    for c in ch:
-        locs.append(c); q.append(c["id"])
-locs += roots
+# все населённые пункты РК постранично, берём районы вокруг Астаны
+ALL = allpages("localities?x=1")
+print("all localities", len(ALL), flush=True)
+locs = [x for x in ALL if "Акмолинская" in x["full_path_rus"] and (any(("р-н " + d) in x["full_path_rus"] for d in DIST) or "г. Косшы" in x["full_path_rus"])]
 print("localities", len(locs), flush=True)
 def streets(l):
     return [(l, g) for g in allpages(f"geonims?locality_id={l['id']}")]
