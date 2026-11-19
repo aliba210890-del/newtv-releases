@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
   push:
     branches: [main]
-    paths: ["jolda-stt/in.enc"]
+    paths: ["jolda-stt/in.enc", ".github/workflows/jolda-stt.yml"]
 permissions:
   contents: write
 jobs:
@@ -16,10 +16,13 @@ jobs:
       - run: pip install -q faster-whisper
       - run: |
           openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 -pass env:JOLDA_KEY -in jolda-stt/in.enc -out in.opus
+          ffmpeg -loglevel error -i in.opus -ar 16000 -ac 1 -f f32le in.raw
           python3 - > out.txt <<'PY'
+          import numpy as np
           from faster_whisper import WhisperModel
+          a=np.fromfile('in.raw',dtype=np.float32)
           m=WhisperModel('medium',device='cpu',compute_type='int8')
-          s,i=m.transcribe('in.opus',language='ru',beam_size=5)
+          s,i=m.transcribe(a,language='ru',beam_size=5)
           print(' '.join(x.text.strip() for x in s))
           PY
           openssl enc -aes-256-cbc -pbkdf2 -iter 200000 -pass env:JOLDA_KEY -in out.txt -out stt.txt.enc
