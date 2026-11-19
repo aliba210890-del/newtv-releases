@@ -50,9 +50,22 @@ setl["жибек жолы"] = [(51.0745, 71.7659)]
 # улицы/микрорайоны, стоящие ровно в центре посёлка, — следы прошлых сборок (домов без точки); убираем, чтобы не вели не туда
 CENTERS = [c for v in setl.values() for c in v] + [(51.0811, 71.74459)]
 def at_center(la, ln): return any(abs(la - a) < 0.0004 and abs(ln - b) < 0.0006 for (a, b) in CENTERS)
-_n0 = len(P["pois"])
-P["pois"] = [p for p in P["pois"] if not (p[1] in ("Улица", "Район") and at_center(p[2], p[3]))]
-print("убрано следов в центрах посёлков:", _n0 - len(P["pois"]))
+# улица остаётся (её ищут по названию), но переезжает в нынешний центр посёлка; микрорайон-дубль, у которого есть настоящая точка, убираем
+CUR = [c for v in setl.values() for c in v]
+real_area = defaultdict(list)
+for p in P["pois"]:
+    if p[1] in ("Район", "ЖК") and not at_center(p[2], p[3]): real_area[skey(p[0])].append((p[2], p[3]))
+_keep, _drop, _moved = [], 0, 0
+for p in P["pois"]:
+    if p[1] in ("Улица", "Район") and at_center(p[2], p[3]):
+        if p[1] == "Район" and any(math.hypot((a - p[2]) * 111, (b - p[3]) * 69) < 5 for (a, b) in real_area.get(skey(p[0]), ())):
+            _drop += 1; continue
+        c = min(CUR, key=lambda c: (c[0] - p[2]) ** 2 + (c[1] - p[3]) ** 2)
+        if math.hypot((c[0] - p[2]) * 111, (c[1] - p[3]) * 69) < 3 and (c[0], c[1]) != (p[2], p[3]):
+            p[2], p[3] = c[0], c[1]; _moved += 1
+    _keep.append(p)
+P["pois"] = _keep
+print("следы в центрах посёлков: убрано дублей", _drop, "перенесено", _moved)
 areas = defaultdict(list)
 for p in P["pois"]:
     if p[1] in ("Район", "ЖК") and not (len(p) > 4 and p[4]):
