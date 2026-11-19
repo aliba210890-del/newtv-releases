@@ -1,0 +1,16 @@
+name: Jolda address test
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ["jolda-check/addr_test.py", "jolda-check/addr-tests.json"]
+permissions:
+  contents: write
+jobs:
+  t:
+    runs-on: ubuntu-latest
+    env: { GH_TOKEN: "${{ github.token }}" }
+    steps:
+      - uses: actions/checkout@v4
+      - run: python3 -u jolda-check/addr_test.py | tee addrtest.txt
+      - run: gh release upload map addrtest.txt -R ${{ github.repository }} --clobber
