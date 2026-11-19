@@ -1,12 +1,10 @@
 name: Jolda probe
-on: [workflow_dispatch]
+on: workflow_dispatch
 jobs:
-  probe:
+  p:
     runs-on: ubuntu-latest
     steps:
       - run: |
-          B=https://joldataxi.kz
-          for q in "Хайвил" "Highvill" "Гранд Опера" "Grand Opera" "Нурсая" "Северное сияние" "Европа палас" "Изумрудный квартал" "Хан Шатыр" "ЖК Шахристан" "Тумар" "Миллениум парк" "Атамекен" "Дипломат" "Престиж"; do
-            r=$(curl -s -G "$B/api/places" --data-urlencode "q=$q" --data-urlencode lat=51.13 --data-urlencode lng=71.43 | python3 -c "import sys,json;j=json.load(sys.stdin);print(len(j.get('items',[])), '|', '; '.join((x.get('name','')+' ['+str(x.get('sub',''))+']') for x in j.get('items',[])[:3]))")
-            echo "::notice::$q => $r"
-          done
+          curl -s "https://joldataxi.kz/api/config" | head -c 300; echo
+          curl -s "https://joldataxi.kz/api/places?q=%D0%90%D1%80%D1%88%D0%B0%D0%BB%D1%8B&lat=51.13&lng=71.43"; echo
+          curl -sI "https://joldataxi.kz/api/places?q=%D0%90%D1%80%D1%88%D0%B0%D0%BB%D1%8B&lat=51.13&lng=71.43" | head -20
