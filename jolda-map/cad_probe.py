@@ -1,23 +1,38 @@
-# Разведка: публичная кадастровая карта (aisgzk.kz) — есть ли адреса домов с координатами
+# Разведка ArcGIS REST aisgzk.kz и map.gov4c.kz: слои с адресами
 import re, urllib.request, json, ssl
 ctx = ssl.create_default_context(); ctx.check_hostname = False; ctx.verify_mode = ssl.CERT_NONE
 out = []
-def get(u, n=400000):
+def get(u, n=3000000):
     try:
         return urllib.request.urlopen(urllib.request.Request(u, headers={"User-Agent": "Mozilla/5.0"}), timeout=40, context=ctx).read(n).decode("utf-8", "ignore")
     except Exception as e:
         return "ERR " + str(e)
-p = get("https://aisgzk.kz/aisgzk/ru/content/maps/")
-out.append("PAGE len %d" % len(p))
-urls = sorted(set(re.findall(r'https?://[^\s"\'<>]+', p)))
-out += ["URL " + u for u in urls if any(k in u.lower() for k in ("arcgis", "rest", "wms", "map", "geo", "service", "js"))][:80]
-for js in [u for u in urls if u.endswith(".js")][:15]:
-    t = get(js, 2000000)
-    for m in sorted(set(re.findall(r'(https?://[^\s"\'<>]*(?:arcgis|MapServer|FeatureServer|wms|geoserver)[^\s"\'<>]*)', t, re.I)))[:30]:
-        out.append("JS " + js.split("/")[-1] + " -> " + m)
-    for m in sorted(set(re.findall(r'["\'](/[^"\']*(?:MapServer|FeatureServer|geoserver|wms|arcgis)[^"\']*)["\']', t, re.I)))[:30]:
-        out.append("JSREL " + js.split("/")[-1] + " -> " + m)
-for base in ["https://aisgzk.kz/arcgis/rest/services?f=json", "https://aisgzk.kz/server/rest/services?f=json", "https://gis.aisgzk.kz/arcgis/rest/services?f=json", "https://map.gov4c.kz/", "https://egkn.gov4c.kz/"]:
-    out.append("TRY " + base + " => " + get(base, 3000)[:600].replace("\n", " "))
+def gj(u):
+    t = get(u)
+    try: return json.loads(t)
+    except Exception: return {"_err": t[:200]}
+B = "https://aisgzk.kz/arcgis/rest/services"
+root = gj(B + "?f=json")
+out.append("ROOT " + json.dumps(root)[:800])
+svcs = [(s["name"], s["type"]) for s in root.get("services", [])]
+for f in root.get("folders", []):
+    j = gj(f"{B}/{f}?f=json"); svcs += [(s["name"], s["type"]) for s in j.get("services", [])]
+out.append("SERVICES %d" % len(svcs))
+for name, typ in svcs[:80]:
+    j = gj(f"{B}/{name}/{typ}?f=json")
+    layers = j.get("layers", [])
+    out.append(f"SVC {name}/{typ} layers={[(l['id'], l['name']) for l in layers][:30]} err={j.get('_err','')[:80]}")
+    for l in layers[:40]:
+        lj = gj(f"{B}/{name}/{typ}/{l['id']}?f=json")
+        flds = [(x.get("name"), x.get("alias")) for x in lj.get("fields", []) or []]
+        if any(re.search(r"adr|addr|адрес|street|улиц|house|дом", (str(a) + str(b)), re.I) for a, b in flds):
+            out.append(f"  ADDRLAYER {name}/{typ}/{l['id']} {l['name']} fields={flds[:40]}")
+# map.gov4c.kz приложение: где API
+p = get("https://map.gov4c.kz/")
+for js in sorted(set(re.findall(r'src="([^"]+\.js)"', p)))[:10]:
+    u = js if js.startswith("http") else "https://map.gov4c.kz/" + js.lstrip("./")
+    t = get(u)
+    for m in sorted(set(re.findall(r'(https?://[a-z0-9\.\-]+(?:/[A-Za-z0-9_\-\./]*)?)', t)))[:60]:
+        if "gov4c" in m or "arcgis" in m.lower() or "api" in m.lower(): out.append("GOV4C " + m)
 open("out.txt", "w").write("\n".join(out))
 print(len(out))
