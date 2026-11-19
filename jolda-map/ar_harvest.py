@@ -21,9 +21,10 @@ def allpages(path):
 DIST = ["Целиноградский", "Аршалынский", "Шортандинский", "Аккольский", "Ерейментауский", "Астраханский"]
 roots = []
 for d in DIST:
-    r = get("localities?name=" + urllib.parse.quote(d.replace("ский", "")))
-    roots += [x for x in r if "Акмолинская" in x["full_path_rus"] and x["ats_type"]["value_ru"].startswith("Район")]
-r = get("localities?name=" + urllib.parse.quote("Косшы")); roots += [x for x in r if "Акмолинская" in x["full_path_rus"]]
+    r = get("localities?limit=200&name=" + urllib.parse.quote(d))
+    print("cand", d, [(x["id"], x["full_path_rus"], x["ats_type"]["value_ru"]) for x in r if "Акмолинская" in x["full_path_rus"]][:6], flush=True)
+    roots += [x for x in r if "Акмолинская" in x["full_path_rus"] and "с.о." not in x["full_path_rus"] and x["full_path_rus"].rstrip().endswith(d)]
+r = get("localities?limit=50&name=" + urllib.parse.quote("Косшы")); roots += [x for x in r if "Акмолинская" in x["full_path_rus"]]
 print("roots", [(x["id"], x["full_path_rus"]) for x in roots], flush=True)
 locs, q, seen = [], [x["id"] for x in roots], set()
 while q:
