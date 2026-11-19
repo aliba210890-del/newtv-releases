@@ -118,7 +118,7 @@ details p{margin:10px 0 2px}
 <a href="/russkoe-tv-vo-francii">ТВ во Франции</a><a href="/#kanaly">Полный список каналов</a></div>
 </main>
 <footer class="foot"><div class="wrap">
-<div><h4>New TV</h4><p>ТВ без границ: каналы 38 стран, кинозал и архив в одном приложении.</p><p>© 2026 New TV · ИП Муканов А. У., Казахстан · <a style="display:inline" href="/usloviya">Условия</a></p></div>
+<div><h4>New TV</h4><p>ТВ без границ: каналы 38 стран, кинозал и архив в одном приложении.</p><p>© 2026 New TV · ИП Муканов А. У., Казахстан · <a style="display:inline" href="/usloviya">Условия</a> · <a style="display:inline" href="/o-kompanii">О компании</a></p></div>
 <div><h4>Полезное</h4><a href="/ustanovka">Установка</a>
 <a href="/russkoe-tv-v-germanii">ТВ в Германии</a>
 <a href="/tv-v-izraile">ТВ в Израиле</a>
@@ -138,12 +138,15 @@ details p{margin:10px 0 2px}
 <a href="https://www.tiktok.com/@newtv.global.service" target="_blank" rel="noopener">TikTok</a></div>
 </div></footer>
 <!-- Yandex.Metrika -->
-<script>(function(m,e,t,r,i,k,a){m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};m[i].l=1*new Date();for(var j=0;j<document.scripts.length;j++){if(document.scripts[j].src===r){return;}}k=e.createElement(t),a=e.getElementsByTagName(t)[0],k.async=1,k.src=r,a.parentNode.insertBefore(k,a)})(window,document,"script","https://mc.yandex.ru/metrika/tag.js","ym");
-ym(114349610,"init",{clickmap:true,trackLinks:true,accurateTrackBounce:true});
-document.addEventListener("click",function(e){var a=e.target.closest&&e.target.closest("a");if(!a)return;var h=a.getAttribute("href")||"",g="";
+<div id="ckb" hidden style="position:fixed;left:12px;right:12px;bottom:12px;z-index:9999;max-width:560px;margin:0 auto;background:#0f1838;color:#eef2ff;border:1px solid rgba(163,176,214,.25);border-radius:14px;padding:14px 16px;font:14px/1.45 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;box-shadow:0 10px 30px rgba(0,0,0,.4)">
+Мы используем cookie и Яндекс Метрику, чтобы понимать, как улучшить сайт. <a href="/usloviya" style="color:#27c4ff">Подробнее</a>
+<div style="display:flex;gap:8px;margin-top:10px;justify-content:flex-end"><button type="button" id="ckn" style="background:transparent;color:#c9d3f2;border:1px solid rgba(163,176,214,.35);border-radius:10px;padding:8px 14px;font:inherit;cursor:pointer">Отклонить</button><button type="button" id="cky" style="background:#ff8a1f;color:#1a0d00;border:0;border-radius:10px;padding:8px 16px;font:inherit;font-weight:700;cursor:pointer">Принять</button></div></div>
+<script>(function(){var ID=114349610,K="ntv_ck";function get(){try{return localStorage.getItem(K)}catch(e){return null}}function set(v){try{localStorage.setItem(K,v)}catch(e){}}
+function start(){if(window.ym&&window.ym.l)return;(function(m,e,t,r,i,k,a){m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};m[i].l=1*new Date();for(var j=0;j<document.scripts.length;j++){if(document.scripts[j].src===r){return;}}k=e.createElement(t),a=e.getElementsByTagName(t)[0],k.async=1,k.src=r,a.parentNode.insertBefore(k,a)})(window,document,"script","https://mc.yandex.ru/metrika/tag.js","ym");ym(ID,"init",{clickmap:true,trackLinks:true,accurateTrackBounce:true});}
+var c=get(),b=document.getElementById("ckb");if(c==="1")start();else if(c!=="0"&&b){b.hidden=false;document.getElementById("cky").onclick=function(){set("1");b.hidden=true;start();};document.getElementById("ckn").onclick=function(){set("0");b.hidden=true;};}
+document.addEventListener("click",function(e){var a=e.target.closest&&e.target.closest("a");if(!a||!window.ym)return;var h=a.getAttribute("href")||"",g="";
 if(/wa\.me|whatsapp/i.test(h))g="whatsapp";else if(/t\.me\/NewTVGlobal_bot/i.test(h))g="telegram_bot";else if(/t\.me\//i.test(h))g="telegram";else if(/^\/pay|paypal/i.test(h))g="pay";else if(/play\.google/i.test(h))g="google_play";else if(/^\/app$|\.apk/i.test(h))g="apk";else if(h==="#podklyuchenie")g="trial";
-if(g)try{ym(114349610,"reachGoal",g);}catch(x){}},true);</script>
-<noscript><div><img src="https://mc.yandex.ru/watch/114349610" style="position:absolute;left:-9999px" alt=""></div></noscript>
+if(g)try{ym(ID,"reachGoal",g);}catch(x){}},true);})();</script>
 <!-- /Yandex.Metrika -->
 </body>
 </html>
