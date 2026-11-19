@@ -47,6 +47,12 @@ for p in P["pois"]:
 setl["жибек жолы"] = [(51.0745, 71.7659)]
 
 # микрорайоны с известной точкой (из OpenStreetMap и наших дополнений) — для домов на улицах, которых нет на карте
+# улицы/микрорайоны, стоящие ровно в центре посёлка, — следы прошлых сборок (домов без точки); убираем, чтобы не вели не туда
+CENTERS = [c for v in setl.values() for c in v] + [(51.0811, 71.74459)]
+def at_center(la, ln): return any(abs(la - a) < 0.0004 and abs(ln - b) < 0.0006 for (a, b) in CENTERS)
+_n0 = len(P["pois"])
+P["pois"] = [p for p in P["pois"] if not (p[1] in ("Улица", "Район") and at_center(p[2], p[3]))]
+print("убрано следов в центрах посёлков:", _n0 - len(P["pois"]))
 areas = defaultdict(list)
 for p in P["pois"]:
     if p[1] in ("Район", "ЖК") and not (len(p) > 4 and p[4]):
