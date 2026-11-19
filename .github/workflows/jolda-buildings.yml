@@ -1,0 +1,17 @@
+name: Jolda buildings
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ["jolda-map/buildings.py"]
+permissions:
+  contents: write
+jobs:
+  b:
+    runs-on: ubuntu-latest
+    env: { GH_TOKEN: "${{ github.token }}" }
+    steps:
+      - uses: actions/checkout@v4
+      - run: pip install -q duckdb
+      - run: python3 -u jolda-map/buildings.py | tee bstat.txt
+      - run: gh release upload map ast-buildings.json.gz bstat.txt -R ${{ github.repository }} --clobber
