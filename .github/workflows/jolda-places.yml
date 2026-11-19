@@ -46,6 +46,13 @@ jobs:
           gh release upload map extra-fetch.log -R "$R" --clobber || true
       - name: Собрать новую базу
         run: python3 -u jolda-map/build_places.py old.json.gz astana-places.json.gz 2>&1 | tee places-build.log; test ${PIPESTATUS[0]} -eq 0
+      - name: Дома из Адресного регистра РК + контуры зданий
+        continue-on-error: true
+        run: |
+          gh release download map -R "$R" -p ar-ast.json.gz -p ast-buildings.json.gz --clobber
+          cp astana-places.json.gz places-osm.json.gz
+          python3 -u jolda-map/add_ar.py astana-places.json.gz astana.geojsonseq ar-ast.json.gz ast-buildings.json.gz 2>&1 | tee ar-add.log || cp places-osm.json.gz astana-places.json.gz
+          gh release upload map ar-add.log -R "$R" --clobber || true
       - name: Обновить файл в релизе
         run: gh release upload map astana-places.json.gz -R "$R" --clobber
       - name: Журнал сборки
