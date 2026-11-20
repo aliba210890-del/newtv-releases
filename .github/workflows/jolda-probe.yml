@@ -6,4 +6,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: |
-          while IFS= read -r q; do echo "=== $q"; curl -s -G </dev/null "https://joldataxi.kz/api/places" --data-urlencode "q=$q" --data "lat=50.9962&lng=71.841" | jq -r '.items[]? | "  \(.name) | \(.sub)"' | head -6 || true; done < jolda-probe-q.txt
+          LL="lat=51.07&lng=71.76"
+          while IFS= read -r q; do
+            case "$q" in @*) c=${q#@}; c=${c%% *}; LL="lat=${c%,*}&lng=${c#*,}"; echo "=== ### $q"; continue;; esac
+            echo "=== $q"; curl -s -G </dev/null "https://joldataxi.kz/api/places" --data-urlencode "q=$q" --data "$LL" | jq -r '.items[]? | "  \(.name) | \(.sub)"' | head -4 || true
+          done < jolda-probe-q.txt
