@@ -5,4 +5,4 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - run: |
-          for u in app drv; do curl -sI "https://joldataxi.kz/$u" | grep -iE 'HTTP/|content-type|content-length|disposition'; done
+          for q in "9 мкр" "10 мкр" "5 мкр"; do curl -s -G "https://joldataxi.kz/api/places" --data-urlencode "q=$q" --data "lat=51.07&lng=71.76" | head -c 400; echo; done
