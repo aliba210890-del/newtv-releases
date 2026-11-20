@@ -27,7 +27,7 @@ jobs:
       - name: Скачать карту Казахстана (OpenStreetMap, Geofabrik)
         run: |
           sudo apt-get update -qq && sudo apt-get install -y -qq osmium-tool
-          curl -fsSL --retry 8 --retry-all-errors --retry-delay 30 -o kz.pbf https://download.geofabrik.de/asia/kazakhstan-latest.osm.pbf
+          { curl -fsSL --retry 3 --retry-all-errors --retry-delay 20 -o kz.pbf https://download.geofabrik.de/asia/kazakhstan-latest.osm.pbf || curl -fsSL --retry 5 --retry-all-errors --retry-delay 20 -o kz.pbf https://download.openstreetmap.fr/extracts/asia/kazakhstan-latest.osm.pbf; }
           ls -la kz.pbf
       - name: Вырезать Астану и 100 км вокруг
         run: |
