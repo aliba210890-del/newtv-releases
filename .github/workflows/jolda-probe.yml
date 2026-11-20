@@ -6,7 +6,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: |
-          LL="lat=51.07&lng=71.76"
+          curl -s https://joldataxi.kz/ | grep -o "jmx1w[a-z0-9]*" | head -1 | sed "s/^/=== build /"; curl -s -o /dev/null -w "=== driver %{http_code}\n" https://joldataxi.kz/driver; LL="lat=51.07&lng=71.76"
           while IFS= read -r q; do
             case "$q" in @*) c=${q#@}; c=${c%% *}; LL="lat=${c%,*}&lng=${c#*,}"; echo "=== ### $q"; continue;; esac
             echo "=== $q"; curl -s -G </dev/null "https://joldataxi.kz/api/places" --data-urlencode "q=$q" --data "$LL" | jq -r '.items[]? | "  \(.name) | \(.sub)"' | head -4 || true
