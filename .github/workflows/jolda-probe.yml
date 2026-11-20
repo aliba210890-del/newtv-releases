@@ -7,5 +7,4 @@ jobs:
       - run: |
           sleep 15
           q() { echo "=== $1: $(curl -s -X POST https://joldataxi.kz/api/quote -H 'content-type: application/json' -d "$2" | jq -c '[.options[]? | select(.cls=="econom") | .price]')"; }
-          sleep 20; echo "=== support: $(curl -s https://joldataxi.kz/api/config | jq -c '{support, phones}')"
-          echo "=== img: $(curl -s -o /dev/null -w '%{http_code} %{size_download}' 'https://joldataxi.kz/img/c-done.webp?v=2')"
+          sleep 20; echo "=== place: $(curl -s 'https://joldataxi.kz/api/places?q=%D1%81%D0%B0%D1%80%D1%8B%20%D0%B0%D1%80%D0%BA%D0%B0%20102&lat=51.07&lng=71.766' | jq -c '.items[0]|{name,sub,lat,lng}')"
