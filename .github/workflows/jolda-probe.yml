@@ -5,7 +5,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - run: |
-          sleep 20
-          echo "=== $(curl -s https://joldataxi.kz/ | grep -o 'jmx1w[a-z0-9]*' | head -1) sw:$(curl -s https://joldataxi.kz/driver | grep -c 'sw.js')"
-          echo "=== $(curl -s -o /dev/null -w '%{http_code} %{content_type}' https://joldataxi.kz/sw.js)"
-          echo "=== $(curl -s -o /dev/null -w '%{http_code}' https://joldataxi.kz/api/config)"
+          sleep 15
+          q() { for ph in false true; do echo "=== $1 phone=$ph: $(curl -s -X POST https://joldataxi.kz/api/quote -H 'content-type: application/json' -d "{\"from\":{\"lat\":$2,\"lng\":$3},\"to\":{\"lat\":$4,\"lng\":$5},\"phone\":$ph}" | jq -c '[.options[]? | select(.cls=="econom") | .price]')"; done; }
+          q "9мкр→1мкр" 51.0604 71.7429 51.091 71.7252
+          q "10мкр→1мкр" 51.0638 71.7771 51.091 71.7252
+          q "5мкр→2мкр" 51.0547 71.8155 51.071 71.7649
+          q "6мкр→Жалтырколь" 51.0892 71.7084 50.9962 71.841
