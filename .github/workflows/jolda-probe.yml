@@ -5,4 +5,4 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - run: |
-          for q in "9 мкр" "10 мкр" "5 мкр"; do curl -s -G "https://joldataxi.kz/api/places" --data-urlencode "q=$q" --data "lat=51.07&lng=71.76" | head -c 400; echo; done
+          curl -s https://joldataxi.kz/ | grep -o "jmx1w[a-z0-9]*" | head -1; for q in "5 мкр" "5-й микрорайон"; do curl -s -G "https://joldataxi.kz/api/places" --data-urlencode "q=$q" --data "lat=51.07&lng=71.76" | head -c 400; echo; done
