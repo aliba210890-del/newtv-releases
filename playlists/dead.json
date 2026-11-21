@@ -1,5 +1,5 @@
 {
-"v": 1795268837,
+"v": 1795293515,
 "ids": [
 "1085",
 "11946",
@@ -61,7 +61,6 @@
 "2265",
 "2266",
 "2267",
-"2579",
 "2609",
 "2620",
 "2811",
@@ -71,13 +70,11 @@
 "2818",
 "2904",
 "311",
-"3606",
 "3931",
 "4537",
 "4860",
 "4891",
 "4896",
-"4904",
 "4907",
 "4926",
 "4982",
@@ -86,9 +83,7 @@
 "977",
 "979",
 "980",
-"KinoTVHD",
-"KonniyMirHD",
-"ViasatNature"
+"KonniyMirHD"
 ],
 "names": [
 "MOVIES DRAMA HD",
@@ -151,7 +146,6 @@
 "Play-x Евгений Леонов",
 "Play-x Высоцкий Документалка",
 "Play-x Паоло Вилладжо",
-"Diema",
 "Duck",
 "Дартс ТВ",
 "Play-x Новогодний калейдоскоп мульты зарубежные",
@@ -161,13 +155,11 @@
 "Play-x Удивительная природа",
 "Football Hub",
 "Travel XP 4k",
-"Clarity4K Боевик",
 "EDGE Sport",
 "О!КИНО",
 "ETB1 On",
 "EsTuTele",
 "EWTN Spain & Latin America",
-"Interalmeria TV",
 "Liga de Campeones por Movistar Plus+",
 "Radio Television Marbella",
 "OK TV - Multik UZ FHD",
@@ -176,8 +168,6 @@
 "Play-x Cinema Asia",
 "Play-x Marvel",
 "Play-x Агент 007",
-"Кино ТВ HD",
-"Новый Игровой Канал",
-"Viju Nature"
+"Новый Игровой Канал"
 ]
 }
