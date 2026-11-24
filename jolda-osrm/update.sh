@@ -15,7 +15,8 @@ rm -rf "$NEW" && mkdir -p "$NEW"
 curl -fsSL -o "$NEW/kz.tar.zst" "https://github.com/aliba210890-del/newtv-releases/releases/download/jolda-osrm-graph/kz-osrm.tar.zst"
 tar -I zstd -xf "$NEW/kz.tar.zst" -C "$NEW" && rm "$NEW/kz.tar.zst"
 docker rm -f osrm-check >/dev/null 2>&1 || true
-docker run -d --name osrm-check --network osrm_default -p 127.0.0.1:5001:5000 -v "/opt/osrm/$NEW:/data:ro" $IMG osrm-routed --algorithm mld /data/kz.osrm >/dev/null
+NET=""; docker network inspect osrm_default >/dev/null 2>&1 && NET="--network osrm_default" # при первой установке сети ещё нет
+docker run -d --name osrm-check $NET -p 127.0.0.1:5001:5000 -v "/opt/osrm/$NEW:/data:ro" $IMG osrm-routed --algorithm mld /data/kz.osrm >/dev/null
 for i in $(seq 1 60); do curl -sf "http://127.0.0.1:5001/route/v1/driving/71.43,51.13;71.76,51.07" | grep -q '"Ok"' && break; sleep 2; done
 fail=0
 while read -r q; do
