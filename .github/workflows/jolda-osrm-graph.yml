@@ -1,0 +1,33 @@
+# Еженедельная сборка графа дорог Казахстана для своих серверов OSRM (бесплатно, ~3 мин).
+# Результат — релиз jolda-osrm-graph (kz-osrm.tar.zst); серверы забирают его скриптом jolda-osrm/update.sh.
+name: Jolda OSRM graph (Kazakhstan)
+on:
+  schedule: [{ cron: "0 20 * * 6" }]   # суббота 20:00 UTC = воскресенье 01:00 Астана
+  workflow_dispatch: {}
+  push: { paths: ['.github/workflows/jolda-osrm-graph.yml'] }
+permissions: { contents: write }
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: build graph
+        run: |
+          IMG=ghcr.io/project-osrm/osrm-backend:v5.27.1
+          mkdir g && cd g
+          curl -fsSL -o kz.osm.pbf https://download.geofabrik.de/asia/kazakhstan-latest.osm.pbf
+          docker run --rm -v $PWD:/data $IMG osrm-extract -p /opt/car.lua /data/kz.osm.pbf
+          docker run --rm -v $PWD:/data $IMG osrm-partition /data/kz.osrm
+          docker run --rm -v $PWD:/data $IMG osrm-customize /data/kz.osrm
+          rm kz.osm.pbf
+          docker run -d --name t -p 5000:5000 -v $PWD:/data $IMG osrm-routed --algorithm mld /data/kz.osrm
+          for i in $(seq 1 60); do curl -sf "http://127.0.0.1:5000/route/v1/driving/71.43,51.13;71.76,51.07" | grep -q '"Ok"' && break; sleep 2; done
+          curl -sf "http://127.0.0.1:5000/route/v1/driving/71.43,51.13;71.76,51.07" | grep -q '"Ok"'
+          docker rm -f t
+          tar -I 'zstd -10 -T0' -cf ../kz-osrm.tar.zst kz.osrm*
+          ls -la ../kz-osrm.tar.zst
+      - name: publish
+        env: { GH_TOKEN: "${{ github.token }}" }
+        run: |
+          gh release view jolda-osrm-graph -R ${{ github.repository }} >/dev/null 2>&1 || gh release create jolda-osrm-graph -R ${{ github.repository }} -t "Jolda OSRM graph" -n "Граф дорог для своих серверов OSRM"
+          gh release upload osrm-graph kz-osrm.tar.zst -R ${{ github.repository }} --clobber
