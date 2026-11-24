@@ -1,0 +1,23 @@
+# Голос навигатора целыми фразами (тот же голос): mp3 в релизы voice2-ru / voice2-kk / voice2-en
+name: Jolda voice whole phrases
+on:
+  workflow_dispatch: {}
+  push:
+    branches: [main]
+    paths: ["jolda-voice/combos.py", "jolda-voice/ru_base.tsv", ".github/workflows/jolda-voice2.yml"]
+permissions:
+  contents: write
+jobs:
+  v:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    strategy: { matrix: { lg: [ru, kk, en] }, fail-fast: false }
+    env: { GH_TOKEN: "${{ github.token }}", R: "${{ github.repository }}" }
+    steps:
+      - uses: actions/checkout@v4
+      - run: pip install edge-tts
+      - run: python3 -u jolda-voice/combos.py ${{ matrix.lg }}
+      - run: |
+          cd out && ls *.mp3 | wc -l && find . -name '*.mp3' -size -2k -print -delete
+          gh release view voice2-${{ matrix.lg }} -R "$R" >/dev/null 2>&1 || gh release create voice2-${{ matrix.lg }} -R "$R" -t "Jolda voice2 ${{ matrix.lg }}" -n "Голос навигатора целыми фразами"
+          gh release upload voice2-${{ matrix.lg }} *.mp3 texts_${{ matrix.lg }}.tsv -R "$R" --clobber
