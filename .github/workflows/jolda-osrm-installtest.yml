@@ -20,3 +20,4 @@ jobs:
           for q in "71.43,51.13;71.76,51.07" "71.75,51.07;71.74,51.08" "71.40,51.16;71.46,51.10"; do curl -s "http://127.0.0.1:5000/route/v1/driving/$q?overview=false" | jq -c '{code, d:.routes[0].distance, t:.routes[0].duration}'; done
           sudo crontab -l
 # rerun 1795495657
+# rerun2

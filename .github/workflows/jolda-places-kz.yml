@@ -28,7 +28,7 @@ jobs:
       - name: Карта Казахстана (OpenStreetMap, Geofabrik)
         run: |
           sudo apt-get update -qq && sudo apt-get install -y -qq osmium-tool
-          curl -fsSL --retry 5 -o kz.pbf https://download.geofabrik.de/asia/kazakhstan-latest.osm.pbf
+          curl -fsSL --retry 12 --retry-all-errors --retry-delay 60 -o kz.pbf https://download.geofabrik.de/asia/kazakhstan-latest.osm.pbf
           osmium tags-filter kz.pbf nwr/name nwr/addr:housenumber n/entrance nwr/landuse=cemetery,allotments nwr/amenity=grave_yard nwr/leisure=resort,beach_resort nwr/tourism=camp_site -o f.pbf --overwrite
           osmium export f.pbf -f geojsonseq -o kz.geojsonseq --overwrite
           wc -l kz.geojsonseq; ls -la kz.pbf kz.geojsonseq

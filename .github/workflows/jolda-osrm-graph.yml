@@ -30,4 +30,4 @@ jobs:
         env: { GH_TOKEN: "${{ github.token }}" }
         run: |
           gh release view jolda-osrm-graph -R ${{ github.repository }} >/dev/null 2>&1 || gh release create jolda-osrm-graph -R ${{ github.repository }} -t "Jolda OSRM graph" -n "Граф дорог для своих серверов OSRM"
-          gh release upload osrm-graph kz-osrm.tar.zst -R ${{ github.repository }} --clobber
+          gh release upload jolda-osrm-graph kz-osrm.tar.zst -R ${{ github.repository }} --clobber
