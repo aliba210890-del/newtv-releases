@@ -22,3 +22,15 @@ jobs:
 # rerun 1795495657
 # rerun2
 # rerun3
+      - name: upgrade (key) + update without pause
+        run: |
+          set -o pipefail
+          K=testkey_0123456789abcdefghij
+          sudo R="file://$PWD/jolda-osrm" bash jolda-osrm/upgrade.sh $K 2>&1 | tail -5 || true
+          sleep 5
+          U="https://test.invalid/route/v1/driving/71.43,51.13;71.76,51.07?overview=false"
+          A=$(curl -sk --resolve test.invalid:443:127.0.0.1 -o /dev/null -w '%{http_code}' -H "X-Jolda-Key: $K" "$U"); B=$(curl -sk --resolve test.invalid:443:127.0.0.1 -o /dev/null -w '%{http_code}' "$U")
+          echo "with key: $A, without: $B"; [ "$A" = 200 ] && [ "$B" = 403 ]
+          ( ok=0; bad=0; while [ ! -f /tmp/upd.done ]; do c=$(curl -sk --max-time 10 --resolve test.invalid:443:127.0.0.1 -o /dev/null -w '%{http_code}' -H "X-Jolda-Key: $K" "$U"); [ "$c" = 200 ] && ok=$((ok+1)) || bad=$((bad+1)); sleep 0.3; done; echo "during update: ok=$ok bad=$bad" > /tmp/upd.res ) &
+          sudo R="file://$PWD/jolda-osrm" bash /opt/osrm/update.sh 2>&1 | tail -5
+          touch /tmp/upd.done; sleep 2; cat /tmp/upd.res; grep -q 'bad=0' /tmp/upd.res

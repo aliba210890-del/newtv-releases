@@ -1,0 +1,19 @@
+# Сервер маршрутов Jolda: отвечает только Jolda (заголовок X-Jolda-Key), остальным — 403.
+# Два адреса: основной osrm и osrm-check (поднимается при еженедельном обновлении) — пока основной перезапускается,
+# запросы идут на проверочный, поэтому маршруты строятся без паузы.
+{$HOST} {
+	@jolda header X-Jolda-Key {$KEY}
+	handle @jolda {
+		reverse_proxy osrm:5000 osrm-check:5000 {
+			lb_policy first
+			lb_try_duration 8s
+			lb_try_interval 250ms
+			health_uri /nearest/v1/driving/71.43,51.13
+			health_interval 3s
+			health_timeout 2s
+		}
+	}
+	handle {
+		respond "forbidden" 403
+	}
+}
