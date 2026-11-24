@@ -20,10 +20,10 @@ jobs:
           docker run --rm -v $PWD:/data $IMG osrm-partition /data/kz.osrm
           docker run --rm -v $PWD:/data $IMG osrm-customize /data/kz.osrm
           rm kz.osm.pbf
-          docker run -d --name t -p 5000:5000 -v $PWD:/data $IMG osrm-routed --algorithm mld /data/kz.osrm
+          docker run -d --name gtest -p 5000:5000 -v $PWD:/data $IMG osrm-routed --algorithm mld /data/kz.osrm
           for i in $(seq 1 60); do curl -sf "http://127.0.0.1:5000/route/v1/driving/71.43,51.13;71.76,51.07" | grep -q '"Ok"' && break; sleep 2; done
           curl -sf "http://127.0.0.1:5000/route/v1/driving/71.43,51.13;71.76,51.07" | grep -q '"Ok"'
-          docker rm -f t
+          docker rm -f gtest
           tar -I 'zstd -10 -T0' -cf ../kz-osrm.tar.zst kz.osrm*
           ls -la ../kz-osrm.tar.zst
       - name: publish
