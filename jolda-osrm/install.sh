@@ -7,10 +7,13 @@ HOST="${1:-route.joldataxi.kz}"
 R=https://raw.githubusercontent.com/aliba210890-del/newtv-releases/main/jolda-osrm
 echo "== Jolda: сервер маршрутов для $HOST =="
 export DEBIAN_FRONTEND=noninteractive
-apt-get update -qq
-apt-get install -y -qq zstd jq curl python3 cron >/dev/null
-command -v docker >/dev/null || apt-get install -y -qq docker.io >/dev/null
-docker compose version >/dev/null 2>&1 || apt-get install -y -qq docker-compose-v2 >/dev/null
+APT="apt-get -o Acquire::ForceIPv4=true -o Acquire::Retries=3"
+$APT update -qq || echo "предупреждение: одно из хранилищ Ubuntu недоступно, продолжаю"
+$APT install -y -qq zstd jq curl python3 cron >/dev/null || { echo "повтор через основное зеркало Ubuntu"; \
+  sed -i 's#http://[a-z0-9.-]*/ubuntu#http://archive.ubuntu.com/ubuntu#g' /etc/apt/sources.list /etc/apt/sources.list.d/*.sources 2>/dev/null || true; \
+  $APT update -qq || true; $APT install -y -qq zstd jq curl python3 cron >/dev/null; }
+command -v docker >/dev/null || $APT install -y -qq docker.io >/dev/null || curl -fsSL https://get.docker.com | sh >/dev/null
+docker compose version >/dev/null 2>&1 || $APT install -y -qq docker-compose-v2 >/dev/null || $APT install -y -qq docker-compose-plugin >/dev/null
 systemctl enable --now docker cron >/dev/null 2>&1 || true
 timedatectl set-timezone Asia/Almaty 2>/dev/null || true
 # запас памяти: 2 ГБ подкачки, чтобы проверочный сервер при обновлении не упирался в память
