@@ -15,7 +15,7 @@ jobs:
         run: |
           IMG=ghcr.io/project-osrm/osrm-backend:v5.27.1
           mkdir g && cd g
-          curl -fsSL -o kz.osm.pbf https://download.geofabrik.de/asia/kazakhstan-latest.osm.pbf
+          curl -fsSL --retry 12 --retry-all-errors --retry-delay 60 -o kz.osm.pbf https://download.geofabrik.de/asia/kazakhstan-latest.osm.pbf
           docker run --rm -v $PWD:/data $IMG osrm-extract -p /opt/car.lua /data/kz.osm.pbf
           docker run --rm -v $PWD:/data $IMG osrm-partition /data/kz.osrm
           docker run --rm -v $PWD:/data $IMG osrm-customize /data/kz.osrm
