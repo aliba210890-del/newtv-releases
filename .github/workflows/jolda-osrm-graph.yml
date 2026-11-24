@@ -24,7 +24,7 @@ jobs:
           for i in $(seq 1 60); do curl -sf "http://127.0.0.1:5000/route/v1/driving/71.43,51.13;71.76,51.07" | grep -q '"Ok"' && break; sleep 2; done
           curl -sf "http://127.0.0.1:5000/route/v1/driving/71.43,51.13;71.76,51.07" | grep -q '"Ok"'
           docker rm -f gtest
-          tar -I 'zstd -10 -T0' -cf ../kz-osrm.tar.zst kz.osrm*
+          sudo tar -I 'zstd -10 -T0' -cf ../kz-osrm.tar.zst kz.osrm*
           ls -la ../kz-osrm.tar.zst
       - name: publish
         env: { GH_TOKEN: "${{ github.token }}" }

@@ -2,6 +2,7 @@
 # Установка сервера маршрутов Jolda одной командой (Ubuntu 22.04/24.04):
 #   curl -fsSL https://raw.githubusercontent.com/aliba210890-del/newtv-releases/main/jolda-osrm/install.sh | bash -s route.joldataxi.kz
 set -euo pipefail
+trap 'echo "== ОШИБКА на шаге выше: пришлите этот текст =="' ERR
 HOST="${1:-route.joldataxi.kz}"
 R=https://raw.githubusercontent.com/aliba210890-del/newtv-releases/main/jolda-osrm
 echo "== Jolda: сервер маршрутов для $HOST =="
