@@ -13,11 +13,11 @@ jobs:
         env: { GH_TOKEN: "${{ github.token }}" }
         run: for i in $(seq 1 40); do gh release view jolda-osrm-graph -R ${{ github.repository }} --json assets -q '.assets[].name' 2>/dev/null | grep -q kz-osrm && break; sleep 30; done
       - name: install
-        run: sudo bash jolda-osrm/install.sh test.invalid 2>&1 | tail -15
+        run: set -o pipefail; sudo bash jolda-osrm/install.sh test.invalid 2>&1 | tail -15
       - name: routes
         run: |
           free -m
-          for q in "71.43,51.13;71.76,51.07" "71.75,51.07;71.74,51.08" "71.40,51.16;71.46,51.10"; do curl -s "http://127.0.0.1:5000/route/v1/driving/$q?overview=false" | jq -c '{code, d:.routes[0].distance, t:.routes[0].duration}'; done
+          set -e; for q in "71.43,51.13;71.76,51.07" "71.75,51.07;71.74,51.08" "71.40,51.16;71.46,51.10"; do curl -s "http://127.0.0.1:5000/route/v1/driving/$q?overview=false" | jq -c '{code, d:.routes[0].distance, t:.routes[0].duration}'; done
           sudo crontab -l
 # rerun 1795495657
 # rerun2

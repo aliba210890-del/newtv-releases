@@ -25,7 +25,7 @@ echo "HOST=$HOST" > .env
 echo "== загрузка карты дорог Казахстана (несколько минут) =="
 bash /opt/osrm/update.sh
 docker compose -f /opt/osrm/docker-compose.yml up -d
-( crontab -l 2>/dev/null | grep -v osrm/update.sh; echo "0 4 * * 0 bash /opt/osrm/update.sh >> /var/log/osrm-update.log 2>&1" ) | crontab -
+{ crontab -l 2>/dev/null | grep -v osrm/update.sh || true; echo "0 4 * * 0 bash /opt/osrm/update.sh >> /var/log/osrm-update.log 2>&1"; } | crontab -
 sleep 5
 if curl -sf "http://127.0.0.1:5000/route/v1/driving/71.43,51.13;71.76,51.07?overview=false" | grep -q '"Ok"'; then
   echo "== ГОТОВО: сервер маршрутов работает. IP этого сервера: $(hostname -I | cut -d" " -f1) =="
