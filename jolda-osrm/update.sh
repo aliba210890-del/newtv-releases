@@ -18,6 +18,7 @@ docker rm -f osrm-check >/dev/null 2>&1 || true
 NET=""; docker network inspect osrm_default >/dev/null 2>&1 && NET="--network osrm_default" # при первой установке сети ещё нет
 docker run -d --name osrm-check $NET -p 127.0.0.1:5001:5000 -v "/opt/osrm/$NEW:/data:ro" $IMG osrm-routed --algorithm mld /data/kz.osrm >/dev/null
 for i in $(seq 1 60); do curl -sf "http://127.0.0.1:5001/route/v1/driving/71.43,51.13;71.76,51.07" | grep -q '"Ok"' && break; sleep 2; done
+echo "$(date) память при двух экземплярах: $(free -m | awk '/Mem/{print "занято "$3" из "$2" МБ"}'), подкачка: $(free -m | awk '/Swap/{print $3" МБ"}')" || true
 fail=0
 while read -r q; do
   a=$(curl -sf "http://127.0.0.1:5001/route/v1/driving/$q?overview=false" | jq -r '.routes[0].distance // empty')
