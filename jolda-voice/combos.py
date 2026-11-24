@@ -22,6 +22,8 @@ for a in T:
     for b in T: J["t_%s_%s" % (a, b)] = then(a, b)
 os.makedirs("out", exist_ok=True)
 open("out/texts_%s.tsv" % LG, "w", encoding="utf-8").write("\n".join(k + "\t" + v for k, v in J.items()))
+# ONLY=c_600_rampl,… — пересобрать только эти фразы (если какая-то не получилась при общей сборке)
+if os.environ.get("ONLY"): J = {k: v for k, v in J.items() if k in os.environ["ONLY"].split(",")}
 async def one(k, t):
     for a in range(5):
         try: await edge_tts.Communicate(t, voice, rate="-4%").save(f"out/{k}.mp3"); return
