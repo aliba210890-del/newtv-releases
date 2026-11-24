@@ -7,7 +7,9 @@ R=https://raw.githubusercontent.com/aliba210890-del/newtv-releases/main/jolda-os
 echo "== Jolda: сервер маршрутов для $HOST =="
 export DEBIAN_FRONTEND=noninteractive
 apt-get update -qq
-apt-get install -y -qq docker.io docker-compose-v2 zstd jq curl python3 cron >/dev/null
+apt-get install -y -qq zstd jq curl python3 cron >/dev/null
+command -v docker >/dev/null || apt-get install -y -qq docker.io >/dev/null
+docker compose version >/dev/null 2>&1 || apt-get install -y -qq docker-compose-v2 >/dev/null
 systemctl enable --now docker cron >/dev/null 2>&1 || true
 timedatectl set-timezone Asia/Almaty 2>/dev/null || true
 # запас памяти: 2 ГБ подкачки, чтобы проверочный сервер при обновлении не упирался в память
