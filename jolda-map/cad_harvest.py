@@ -112,7 +112,7 @@ for did in only:
     for (la, ln, area, loc, st, h) in rows.values():
         if area > 20000: continue  # поля и большие участки — не дом
         sa, sn = unfix(la, ln, zone_srv(loc, la, ln))
-        out.append(f"с. {loc}|{st}|{h}|{sa:.6f}|{sn:.6f}")
+        out.append(f"{loc}|{st}|{h}|{sa:.6f}|{sn:.6f}")
     with gzip.open(f"cad-{DIST[did]}.txt.gz", "wt", encoding="utf-8") as fo: fo.write("\n".join(out))
     from collections import Counter
     cnt = Counter(r[3] for r in rows.values())
