@@ -2,7 +2,7 @@
 import json, ssl, urllib.request, re
 ctx = ssl.create_default_context(); ctx.check_hostname = False; ctx.verify_mode = ssl.CERT_NONE
 def get(u, n=8000000, data=None, h=None):
-    hd = {"User-Agent": "Mozilla/5.0", "Referer": "https://map.gov4c.kz/", "Origin": "https://map.gov4c.kz"}
+    hd = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36", "Accept": "*/*", "Accept-Language": "ru-RU,ru;q=0.9", "Referer": "https://map.gov4c.kz/", "Origin": "https://map.gov4c.kz"}
     if h: hd.update(h)
     try: return urllib.request.urlopen(urllib.request.Request(u, data=data, headers=hd), timeout=60, context=ctx).read(n).decode("utf-8", "ignore")
     except Exception as e: return "ERR " + str(e)
@@ -12,6 +12,7 @@ for u in ["https://map.gov4c.kz/egkn/","https://map.gov4c.kz/api/","https://aisg
     out.append("TRY "+u+" "+get(u,3000)[:300].replace("\n"," "))
 out.append("HTML " + h[:1500].replace("\n", " "))
 js = sorted(set(re.findall(r'(?:src|href)="([^"]+\.js)"', h)))
+js = js + ["egkn/" + x.lstrip("./") for x in js]
 for s in js:
     u = s if s.startswith("http") else "https://map.gov4c.kz/" + s.lstrip("./")
     t = get(u)
