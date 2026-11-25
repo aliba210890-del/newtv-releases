@@ -80,6 +80,6 @@ if [ -d /opt/osrm ]; then
 fi
 sleep 8
 asterisk -rx "pjsip show transports" | grep -E "transport-(udp|ws)" || true
-W=$(curl --http1.1 -s -o /dev/null -w '%{http_code}' -H 'Connection: Upgrade' -H 'Upgrade: websocket' -H 'Sec-WebSocket-Version: 13' -H 'Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==' -H 'Sec-WebSocket-Protocol: sip' https://sip.joldataxi.kz/ws || true)
+W=$(curl --http1.1 --max-time 5 -s -o /dev/null -w '%{http_code}' -H 'Connection: Upgrade' -H 'Upgrade: websocket' -H 'Sec-WebSocket-Version: 13' -H 'Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==' -H 'Sec-WebSocket-Protocol: sip' https://sip.joldataxi.kz/ws || true)
 if python3 -m edge_tts --voice ru-RU-SvetlanaNeural --text "Проверка голоса Жолда." --write-media /tmp/jv.mp3 >/dev/null 2>&1; then echo "голос: работает"; else echo "голос: НЕ работает — пришлите этот текст"; fi
 if [ "$W" = 101 ]; then echo "== ГОТОВО: телефонная станция работает (IP $IP) =="; else echo "== ПРОВЕРКА: вход для браузеров ответил $W — пришлите этот текст =="; fi
