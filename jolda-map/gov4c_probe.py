@@ -5,3 +5,4 @@ u = "https://map.gov4c.kz/egkn/static/js/main.df021c09.chunk.js"
 t = urllib.request.urlopen(urllib.request.Request(u, headers={"User-Agent": "Mozilla/5.0", "Referer": "https://map.gov4c.kz/"}), timeout=90, context=ctx).read()
 open("gov4c-main.js.gz", "wb").write(gzip.compress(t))
 open("probe.txt", "w").write("ok %d" % len(t))
+# r
