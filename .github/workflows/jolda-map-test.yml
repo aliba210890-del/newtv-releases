@@ -1,0 +1,45 @@
+# Тестовая сборка базы адресов Jolda (рабочую базу в релизе «map» НЕ меняет):
+# сравнивает старую и новую расстановку домов на домах OSM с известным местом и кладёт результат в релиз «map-test».
+name: Jolda map test
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ["jolda-map/add_ar2.py", "jolda-map/eval_*.py", ".github/workflows/jolda-map-test.yml"]
+
+permissions:
+  contents: write
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      GH_TOKEN: ${{ github.token }}
+      R: ${{ github.repository }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Карта OpenStreetMap (Астана и 100 км)
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq osmium-tool
+          { curl -fsSL --retry 12 --retry-all-errors --retry-delay 60 -o kz.pbf https://download.geofabrik.de/asia/kazakhstan-latest.osm.pbf || curl -fsSL --retry 5 --retry-all-errors --retry-delay 20 -o kz.pbf https://download.openstreetmap.fr/extracts/asia/kazakhstan-latest.osm.pbf; }
+          osmium extract -b 70.00,50.20,72.90,52.05 kz.pbf -o astana.pbf --overwrite
+          osmium tags-filter astana.pbf nwr/name nwr/addr:housenumber n/entrance nwr/landuse=cemetery,allotments nwr/amenity=grave_yard nwr/leisure=resort,beach_resort nwr/tourism=camp_site -o f.pbf --overwrite
+          osmium export f.pbf -f geojsonseq -o astana.geojsonseq --overwrite
+      - name: Данные
+        run: gh release download map -R "$R" -p astana-places.json.gz -p ar-ast.json.gz -p ast-buildings.json.gz --clobber
+      - name: Проверка точности (старая и новая расстановка)
+        run: |
+          cp astana-places.json.gz t.json.gz
+          EVAL=1 python3 -u jolda-map/add_ar2.py t.json.gz astana.geojsonseq ar-ast.json.gz ast-buildings.json.gz 2>&1 | tee map-test-eval.log
+      - name: Тестовая сборка новой расстановкой
+        run: |
+          cp astana-places.json.gz astana-places-test.json.gz
+          python3 -u jolda-map/add_ar2.py astana-places-test.json.gz astana.geojsonseq ar-ast.json.gz ast-buildings.json.gz 2>&1 | tee map-test-build.log
+          python3 jolda-map/eval_coverage.py astana-places.json.gz astana-places-test.json.gz 2>&1 | tee map-test-coverage.log
+      - name: В релиз map-test
+        if: always()
+        run: |
+          gh release view map-test -R "$R" >/dev/null 2>&1 || gh release create map-test -R "$R" -t "Jolda map test" -n "Тестовые сборки базы адресов (не рабочие)"
+          for f in map-test-eval.log map-test-build.log map-test-coverage.log astana-places-test.json.gz; do [ -f $f ] && gh release upload map-test $f -R "$R" --clobber || true; done
