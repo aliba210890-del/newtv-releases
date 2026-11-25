@@ -13,6 +13,7 @@ jobs:
     env: { GH_TOKEN: "${{ github.token }}" }
     steps:
       - uses: actions/checkout@v4
+      - run: pip install -q pyproj
       - run: python3 jolda-map/gov4c_probe.py
       - if: always()
         run: for f in probe.txt *.gz; do [ -f "$f" ] && for i in 1 2 3; do gh release upload map-test "$f" -R ${{ github.repository }} --clobber && break; sleep 5; done; done; true
