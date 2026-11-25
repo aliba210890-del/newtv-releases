@@ -10,9 +10,11 @@ d = get("https://map.gov4c.kz/egkn/rest/map/districts?lang=ru", 10**7)
 out.append("DISTR " + d[:200])
 ids = []
 try:
-    for x in json.loads(d):
-        s = json.dumps(x, ensure_ascii=False)
-        if re.search("Аршал|Целиноград|Акмол|Астан", s): out.append("D " + s[:400]); ids.append(x)
+    for reg in json.loads(d):
+        for x in reg.get("districts", []):
+            s = json.dumps(x, ensure_ascii=False)
+            if reg["code"] == "01": out.append("D " + s[:300])
+            if re.search("Аршал|Целиноград", s): ids.append(x)
 except Exception as e: out.append("DERR " + str(e))
 def find(o, keys=("id",)):
     return [o.get(k) for k in keys]
