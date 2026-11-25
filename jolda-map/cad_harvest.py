@@ -57,6 +57,33 @@ def centroid(geom):
         A /= 2; p = (abs(A), cx / (6 * A), cy / (6 * A))
         if not best or p[0] > best[0]: best = p
     return best
+# здания (Overture: Microsoft/OSM/Google) — точка дома ставится на крышу самого большого здания внутри участка
+B = {}
+try:
+    tok = os.environ.get("GH_TOKEN", "")
+    rq = urllib.request.Request("https://api.github.com/repos/aliba210890-del/newtv-releases/releases/assets/766835894", headers={"Accept": "application/octet-stream", "Authorization": "Bearer " + tok})
+    for la, ln, ar, *_ in json.loads(gzip.decompress(urllib.request.urlopen(rq, timeout=300).read()))["b"]:
+        if ar >= 25: B.setdefault((int(la * 500), int(ln * 300)), []).append((la, ln, ar))
+    log.append(f"buildings cells {len(B)}")
+except Exception as e: log.append("buildings ERR " + str(e))
+def inside(x, y, ring):
+    c = False
+    for i in range(len(ring) - 1):
+        x0, y0 = ring[i]; x1, y1 = ring[i + 1]
+        if (y0 > y) != (y1 > y) and x < (x1 - x0) * (y - y0) / (y1 - y0) + x0: c = not c
+    return c
+def roof(geom, z):
+    best = None
+    for poly in geom["coordinates"]:
+        ring = [TRUE[z].transform(p[0], p[1]) for p in poly[0]]  # (lng, lat)
+        lo = min(p[0] for p in ring); hi = max(p[0] for p in ring); sa = min(p[1] for p in ring); na = max(p[1] for p in ring)
+        if (hi - lo) * (na - sa) > 0.00002: continue  # большой участок — не ищем
+        for a in range(int(sa * 500), int(na * 500) + 1):
+            for b in range(int(lo * 300), int(hi * 300) + 1):
+                for la, ln, ar in B.get((a, b), ()):
+                    if sa <= la <= na and lo <= ln <= hi and inside(ln, la, ring) and (not best or ar > best[2]): best = (la, ln, ar)
+    return best
+stat = {"roof": 0, "plot": 0}
 only = [int(x) for x in sys.argv[1:]] or list(DIST)
 for did in only:
     rows, seen, n, off, step = {}, 0, 0, 0, 2000
@@ -72,6 +99,9 @@ for did in only:
             if not c: continue
             x, y = c[1], c[2]; z = 13 if x >= 13e6 else 12
             ln, la = TRUE[z].transform(x, y)
+            r = roof(f["geometry"], z) if B else None
+            if r: la, ln = r[0], r[1]; stat["roof"] += 1
+            else: stat["plot"] += 1
             k = (loc, st, h.lower())
             if k in rows and rows[k][2] >= c[0]: continue
             rows[k] = (la, ln, c[0], loc, st, h)
@@ -87,4 +117,5 @@ for did in only:
     from collections import Counter
     cnt = Counter(r[3] for r in rows.values())
     log.append(f"DIST {did} {DIST[did]}: parcels {seen}, houses {len(out)}; " + ", ".join(f"{a} {b}" for a, b in cnt.most_common(40)))
+log.append(f"points: on roof {stat['roof']}, plot center {stat['plot']}")
 open("probe.txt", "w").write("\n".join(log)); print("\n".join(log))
