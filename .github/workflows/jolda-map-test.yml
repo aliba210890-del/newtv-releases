@@ -42,4 +42,5 @@ jobs:
         if: always()
         run: |
           gh release view map-test -R "$R" >/dev/null 2>&1 || gh release create map-test -R "$R" -t "Jolda map test" -n "Тестовые сборки базы адресов (не рабочие)"
-          for f in map-test-eval.log map-test-build.log map-test-coverage.log astana-places-test.json.gz; do [ -f $f ] && gh release upload map-test $f -R "$R" --clobber || true; done
+          ls -la map-test-* astana-places-test.json.gz || true
+          for f in map-test-eval.log map-test-build.log map-test-coverage.log astana-places-test.json.gz; do for t in 1 2 3; do [ -f $f ] && gh release upload map-test $f -R "$R" --clobber && break; sleep 5; done; done
