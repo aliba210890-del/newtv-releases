@@ -17,3 +17,8 @@
 		respond "forbidden" 403
 	}
 }
+
+# Телефонная станция Jolda (Asterisk на этом же сервере, jolda-sip): браузеры диспетчеров подключаются по wss.
+sip.joldataxi.kz {
+	reverse_proxy host.docker.internal:8088
+}

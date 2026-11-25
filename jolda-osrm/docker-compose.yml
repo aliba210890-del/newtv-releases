@@ -12,5 +12,6 @@ services:
     environment: ["HOST=${HOST}", "KEY=${KEY}"]
     ports: ["80:80", "443:443"]
     volumes: ["caddy:/data", "/opt/osrm/Caddyfile:/etc/caddy/Caddyfile:ro"]
+    extra_hosts: ["host.docker.internal:host-gateway"]
     restart: always
 volumes: { caddy: {} }
