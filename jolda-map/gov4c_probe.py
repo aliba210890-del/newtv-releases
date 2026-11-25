@@ -6,7 +6,17 @@ def get(p, n=4000):
     try: return urllib.request.urlopen(urllib.request.Request(R + p, headers={"User-Agent": "Mozilla/5.0", "Referer": "https://map.gov4c.kz/egkn/"}), timeout=60, context=ctx).read().decode("utf-8", "ignore")[:n]
     except Exception as e: return "ERR " + str(e)
 out = []
-out.append("LAYERS " + get("/map/layers?lang=ru", 6000))
+L = get("/map/layers?lang=ru", 10**7)
+import re
+names = sorted(set(re.findall(r'"name":"([a-z_0-9]+)"', L)))
+out.append("NAMES " + " ".join(names))
+nu = [n for n in names if n.startswith("nu_")]
+import math
+x = 71.7659 * 20037508.34 / 180; y = math.log(math.tan((90 + 51.0745) * math.pi / 360)) * 6378137
+for lay in [",".join(nu)] + nu[:15]:
+    out.append(f"GET3857 [{lay}] " + get(f"/map/get?x={x}&y={y}&layers={lay}&lang=ru", 3000))
+for s2 in ["01-011-082-017", "Жибек"]:
+    out.append(f"SEARCHNU {s2} " + get(f"/map/search?searchText={urllib.parse.quote(s2)}&offset=0&limit=5&lang=ru&layers={','.join(nu)}", 3000))
 q = urllib.parse.quote
 for s in ["01-011-082-017", "01011082017", "Орталық 24", "Сарыадыр"]:
     for L in ["lands", "", "lands,address"]:
