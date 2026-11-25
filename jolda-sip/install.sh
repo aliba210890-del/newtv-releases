@@ -13,6 +13,8 @@ export DEBIAN_FRONTEND=noninteractive
 APT="apt-get -o Acquire::ForceIPv4=true -o Acquire::Retries=3"
 $APT update -qq || echo "предупреждение: одно из хранилищ Ubuntu недоступно, продолжаю"
 $APT install -y -qq asterisk python3 curl iptables >/dev/null
+$APT install -y -qq ffmpeg python3-pip >/dev/null
+python3 -m pip install -q edge-tts --break-system-packages 2>/dev/null || python3 -m pip install -q edge-tts
 IP=$(curl -4 -fsS https://api.ipify.org 2>/dev/null || hostname -I | cut -d" " -f1)
 echo "IP сервера: $IP"
 
@@ -79,4 +81,5 @@ fi
 sleep 8
 asterisk -rx "pjsip show transports" | grep -E "transport-(udp|ws)" || true
 W=$(curl --http1.1 -s -o /dev/null -w '%{http_code}' -H 'Connection: Upgrade' -H 'Upgrade: websocket' -H 'Sec-WebSocket-Version: 13' -H 'Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==' -H 'Sec-WebSocket-Protocol: sip' https://sip.joldataxi.kz/ws || true)
+if python3 -m edge_tts --voice ru-RU-SvetlanaNeural --text "Проверка голоса Жолда." --write-media /tmp/jv.mp3 >/dev/null 2>&1; then echo "голос: работает"; else echo "голос: НЕ работает — пришлите этот текст"; fi
 if [ "$W" = 101 ]; then echo "== ГОТОВО: телефонная станция работает (IP $IP) =="; else echo "== ПРОВЕРКА: вход для браузеров ответил $W — пришлите этот текст =="; fi

@@ -50,6 +50,25 @@ def dial_number(phone):
     return n
 
 
+def voice(job):
+    """Озвучка на этом сервере (Казахстан): голос Svetlana/Aigul через edge-tts, затем wav 8 кГц для телефонной линии."""
+    if not job.get("text"):
+        return None
+    import subprocess, tempfile
+    v = "kk-KZ-AigulNeural" if job.get("lang") == "kk" else "ru-RU-SvetlanaNeural"
+    with tempfile.TemporaryDirectory() as d:
+        mp3, wav = os.path.join(d, "a.mp3"), os.path.join(d, "a.wav")
+        try:
+            subprocess.run(["python3", "-m", "edge_tts", "--voice", v, "--rate=-5%", "--text", job["text"], "--write-media", mp3],
+                           check=True, capture_output=True, timeout=40)
+            subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-i", mp3, "-ar", "8000", "-ac", "1", "-sample_fmt", "s16", wav],
+                           check=True, capture_output=True, timeout=40)
+            return open(wav, "rb").read()
+        except Exception as e:
+            print("озвучка на сервере не вышла:", e, flush=True)
+            return None
+
+
 def place_call(c, job, wav):
     os.makedirs(SOUNDS, exist_ok=True)
     os.makedirs(TMP, exist_ok=True)
@@ -123,7 +142,7 @@ def main():
             r = req(c, "/api/tel/next")
             job = r.get("job")
             if job:
-                wav = req(c, "/api/tel/audio?id=%d" % job["id"], raw=True)
+                wav = voice(job) or req(c, "/api/tel/audio?id=%d" % job["id"], raw=True)
                 name = place_call(c, job, wav)
                 pending[name] = (job["id"], time.time())
                 print("звоним", job["kind"], job["phone"], flush=True)
