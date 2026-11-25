@@ -597,6 +597,13 @@ def main(old_path, out_path):
         if p[1] == "Здание" and nkey(p[0]) in vill and not any(str(x).strip() for x in p[4:8]) and math.hypot((p[2] - 51.128) * 111, (p[3] - 71.43) * 69) > 15: drop.add(k)
     for k in drop: del pois[k]
     print("посёлки-дубли и мусорные «здания» убраны: %d" % len(drop), flush=True)
+    # казахские названия школ, садиков и т.п. → русские (казахское остаётся для поиска); дубли одного места — в одну точку
+    try:
+        sys.path.insert(0, os.path.dirname(os.path.abspath(__file__))); from localize import localize, dedupe
+        lst = list(pois.values()); nren = localize(lst); lst, nd = dedupe(lst)
+        pois = {(p[0].lower(), round(p[2], 3), round(p[3], 3)): p for p in lst}
+        print("русские названия: %d, дублей убрано: %d" % (nren, nd), flush=True)
+    except Exception as e: print("localize:", e, flush=True)
     sru = load_street_ru(EXPORT)
     used = {a[0] for a in addr.values()} | {p[4] for p in pois.values() if p[4]}
     sru = {k: v for k, v in sru.items() if k in used}
