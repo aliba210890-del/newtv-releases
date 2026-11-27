@@ -83,6 +83,9 @@ a { color: inherit; }
 .hero__in > * { min-width: 0; }
 .hero h1 { font: 800 clamp(2rem, 3.6vw + .9rem, 3.6rem)/1.08 var(--f); letter-spacing: -.025em; margin: 0 0 1.1rem; text-wrap: balance; }
 .hl { background: linear-gradient(90deg, var(--amber), var(--orange) 70%); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.avail { display: inline-flex; align-items: center; gap: .55rem; margin: 0 0 1.3rem; padding: .5rem .9rem; border-radius: 999px; background: rgba(34,197,94,.12); border: 1px solid rgba(34,197,94,.45); color: inherit; text-decoration: none; font-size: .95rem; font-weight: 600; line-height: 1.35; }
+.avail b { color: #FF9F1C; }
+.avail__dot { width: .55rem; height: .55rem; border-radius: 50%; background: #22C55E; flex: none; box-shadow: 0 0 0 4px rgba(34,197,94,.25); }
 .hero__lead { color: var(--soft); font-size: clamp(1rem, .4vw + .95rem, 1.15rem); max-width: 34rem; margin: 0 0 1.6rem; }
 @media (min-width: 980px) { .hero__in { grid-template-columns: minmax(0,.85fr) minmax(0,1.2fr); gap: 1.5rem; } }
 
@@ -296,6 +299,7 @@ details.more[open] summary::after { transform: rotate(-135deg); }
       <div>
         <h1>Телевидение, <span class="hl">которое всегда</span> с вами</h1>
         <p class="hero__lead">Телеканалы 38 стран, кинозал и архив передач в собственном приложении New TV. Включили, выбрали и смотрите: просто для любого возраста.</p>
+        <a class="avail" href="https://play.google.com/store/apps/details?id=online.newtvglobal.app" target="_blank" rel="noopener"><span class="avail__dot" aria-hidden="true"></span>Теперь в Google Play и на Google TV · Fire TV Stick — через Downloader <b>5451207</b></a>
         <div class="btnrow">
           <a class="btn btn--primary" href="#podklyuchenie">Смотреть бесплатно 24 часа</a>
           <a class="btn btn--ghost" href="#kanaly">Список каналов</a>
@@ -325,14 +329,14 @@ details.more[open] summary::after { transform: rotate(-135deg); }
         <p class="sec__sub">Три шага, и первые 24 часа бесплатно. Если что-то не получается, напишите нам: поможем на каждом этапе.</p>
       </div>
       <ol class="steps">
-        <li><h3>Установите приложение</h3><p>На телевизоре или приставке откройте программу Downloader и введите код <span class="code">5451207</span>.</p><p>На телефоне или планшете Android — <a href="https://play.google.com/store/apps/details?id=online.newtvglobal.app" target="_blank" rel="noopener">New TV Player в Google Play</a> или newtvglobal.online/app.</p></li>
-        <li><h3>Смотрите бесплатно 24 часа</h3><p>Откройте New TV и нажмите на пульте OK на кнопке «Смотреть бесплатно 24 часа». Каналы и кинозал включатся сразу, без звонков и заявок.</p></li>
+        <li><h3>Установите приложение</h3><p><b>Android TV и Google TV:</b> найдите в магазине <a href="https://play.google.com/store/apps/details?id=online.newtvglobal.app" target="_blank" rel="noopener">New TV Player в Google Play</a> и нажмите «Установить».</p><p><b>Fire TV Stick и любые приставки:</b> откройте программу Downloader и введите код <span class="code">5451207</span>.</p><p>На телефоне или планшете Android — <a href="https://play.google.com/store/apps/details?id=online.newtvglobal.app" target="_blank" rel="noopener">New TV Player в Google Play</a> или newtvglobal.online/app.</p></li>
+        <li><h3>Смотрите бесплатно 24 часа</h3><p>Откройте New TV и нажмите на пульте OK на кнопке «Смотреть бесплатно 24 часа». Каналы и кинозал включатся сразу, без звонков и заявок.</p><p>Поставили из Google Play? На экране будет QR-код: наведите на него камеру телефона и нажмите «Смотреть бесплатно 24 часа» на открывшейся странице — телевизор включится сам.</p></li>
         <li><h3>Оформите подписку</h3><p>Понравилось? Наведите телефон на QR-код на экране или нажмите <a href="/pay">«Оплатить»</a> и впишите код устройства (он в приложении: «Настройки» → «Код устройства»). После оплаты на телевизоре сразу появится «Подписка подключена».</p></li>
       </ol>
       <div class="devlist">
         <div>
           <h3><span class="dot" aria-hidden="true"></span>Работает сейчас</h3>
-          <ul><li>Android TV и Google TV</li><li>Приставки: TV Box, TV Stick, Fire TV</li><li>Телефоны и планшеты Android</li></ul>
+          <ul><li>Android TV и Google TV — в Google Play</li><li>Amazon Fire TV Stick — через Downloader</li><li>Приставки: TV Box, TV Stick</li><li>Телефоны и планшеты Android — в Google Play</li></ul>
         </div>
         <div class="soon">
           <h3><span class="dot" aria-hidden="true"></span>Скоро</h3>
