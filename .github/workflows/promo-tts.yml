@@ -1,0 +1,21 @@
+# Озвучка для рекламных роликов New TV (нейроголос edge-tts): mp3 + тайминги слов в релиз promo-tts
+name: Promo TTS
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ["promo-tts/**", ".github/workflows/promo-tts.yml"]
+permissions:
+  contents: write
+jobs:
+  tts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env: { GH_TOKEN: "${{ github.token }}", R: "${{ github.repository }}" }
+    steps:
+      - uses: actions/checkout@v4
+      - run: pip install edge-tts
+      - run: python3 -u promo-tts/tts.py && ls -la out
+      - run: |
+          gh release view promo-tts -R "$R" >/dev/null 2>&1 || gh release create promo-tts -R "$R" -t "Promo TTS" -n "Озвучка рекламных роликов"
+          gh release upload promo-tts out/* -R "$R" --clobber
